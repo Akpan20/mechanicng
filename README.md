@@ -1,177 +1,207 @@
-# Supabase CLI
+# MechanicNG
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+A full-stack web platform connecting vehicle owners with mechanics in Nigeria. Users can search for nearby mechanics, request quotes, leave reviews, and book services — while mechanics can manage their profiles and subscriptions.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+---
 
-This repository contains all the functionality for Supabase CLI.
+## Tech Stack
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+### Frontend
 
-## Getting started
+- **React 18** + **TypeScript** — UI framework
+- **Vite** — Build tool and dev server
+- **Tailwind CSS** — Utility-first styling
+- **Redux Toolkit** + **React Query** — State management and server-state caching
+- **React Router v6** — Client-side routing
+- **Radix UI** — Accessible component primitives
+- **Recharts** — Dashboard charts
+- **React Leaflet** — Map integration
+- **Framer Motion** — Animations
+- **Zod** + **React Hook Form** — Form validation
+- **Paystack** — Payment integration
 
-### Install the CLI
+### Backend
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+- **Node.js** + **Express** + **TypeScript** — REST API server
+- **MongoDB** + **Mongoose** — Database and ODM
+- **JWT** + **bcryptjs** — Authentication and password hashing
+- **Nodemailer** — Email notifications
+- **Multer** — File/image uploads
+- **Helmet** + **CORS** + **express-rate-limit** — Security middleware
+- **Zod** — Request validation
 
-```bash
-npm i supabase --save-dev
-```
+---
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
-
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
-
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
-
-<details>
-  <summary><b>macOS</b></summary>
-
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
+## Project Structure
 
 ```bash
-supabase bootstrap
+mechanicng/
+├── frontend/          # React + Vite SPA
+│   └── src/
+│       ├── components/    # Reusable UI components
+│       ├── pages/         # Route-level page components
+│       ├── hooks/         # Custom React hooks
+│       ├── store/         # Redux slices
+│       ├── lib/           # API clients, utilities, constants
+│       └── types/         # TypeScript type definitions
+│
+└── backend/           # Express REST API
+    └── src/
+        ├── controllers/   # Route handler logic
+        ├── models/        # Mongoose schemas
+        ├── routes/        # Express route definitions
+        ├── middleware/     # Auth, error handling
+        └── lib/           # DB connection, JWT utilities
 ```
 
-Or using npx:
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB (local or Atlas)
+- npm or yarn
+
+### Backend Setup
 
 ```bash
-npx supabase bootstrap
+cd backend
+npm install
 ```
 
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+Create a `.env` file in the `backend/` directory:
 
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
+```env
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/mechanicng
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=7d
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=your@email.com
+EMAIL_PASS=your_email_password
 ```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file in the `frontend/` directory:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+---
+
+## Available Scripts
+
+### Backend Scripts
+
+| Script | Description |
+| -------- | ------------- |
+| `npm run dev` | Start dev server with hot reload (tsx watch) |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm start` | Run compiled production build |
+| `npm run create-admin` | Seed an admin user |
+| `npm run test-admin-api` | Run admin endpoint smoke tests |
+
+### Frontend Scripts
+
+| Script | Description |
+| -------- | ------------- |
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run type-check` | TypeScript check without emitting |
+| `npm test` | Run Vitest unit tests |
+| `npm run test:coverage` | Run tests with coverage report |
+
+---
+
+## Key Features
+
+- **Mechanic Search** — Find mechanics by location using geolocation and map-based search
+- **Profiles** — Detailed mechanic profiles with ratings, reviews, and service listings
+- **Quotes** — Request and manage service quotes
+- **Reviews** — Leave and read mechanic reviews
+- **Authentication** — JWT-based auth with protected routes for mechanics, users, and admins
+- **Subscriptions** — Mechanic subscription management with Paystack payments
+- **Ads Platform** — Admin-controlled ad campaigns with advertiser dashboard
+- **Admin Panel** — Platform-wide stats, mechanic management, revenue reports, and campaign controls
+
+---
+
+## API Overview
+
+The backend exposes a RESTful API under `/api`:
+
+| Route | Description |
+| ------- | ------------- |
+| `/api/auth` | Register, login, token refresh |
+| `/api/mechanics` | Search and view mechanic profiles |
+| `/api/quotes` | Create and manage service quotes |
+| `/api/reviews` | Submit and fetch mechanic reviews |
+| `/api/subscriptions` | Manage mechanic subscription plans |
+| `/api/ads` | Serve and manage ad campaigns |
+| `/api/admin/mechanics` | Admin: mechanic management |
+
+---
+
+## Admin Setup
+
+To create the initial admin account:
+
+```bash
+cd backend
+npm run create-admin
+```
+
+See [`ADMIN_SETUP.md`](backend/ADMIN_SETUP.md) for full admin configuration details.
+
+---
+
+## Deployment
+
+### Backend Deployment
+
+Build and deploy to any Node.js host (Railway, Render, etc.):
+
+```bash
+npm run build
+npm start
+```
+
+### Frontend Deployment
+
+The frontend includes a `vercel.json` configuration for zero-config deployment to Vercel:
+
+```bash
+npm run build
+# Deploy the dist/ folder
+```
+
+---
+
+## License
+
+Private. All rights reserved.
