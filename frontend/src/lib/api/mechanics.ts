@@ -1,11 +1,11 @@
 import { api } from './client'
 import type { Mechanic, MechanicStatus, SearchFilters } from '@/types'
 
-// Strict camelCase normalization only
-function normalize(m: Record<string, unknown>): Mechanic {
+function normalize(m: unknown): Mechanic {
+  const data = m as Record<string, unknown>
   return {
-    ...(m as Mechanic),
-    id: m.id as string,
+    ...(data as unknown as Mechanic),
+    id: String(data.id),
   }
 }
 
@@ -23,7 +23,7 @@ export async function getMechanics(
   if (filters?.lng)        params.set('lng', String(filters.lng))
 
   const qs = params.toString()
-  const data = await api.get<Mechanic[]>(
+  const data = await api.get<unknown[]>(
     `/api/mechanics${qs ? `?${qs}` : ''}`
   )
 
@@ -31,7 +31,7 @@ export async function getMechanics(
 }
 
 export async function getMechanicById(id: string): Promise<Mechanic> {
-  const data = await api.get<Mechanic>(`/api/mechanics/${id}`)
+  const data = await api.get<unknown>(`/api/mechanics/${id}`)
   return normalize(data)
 }
 
@@ -39,7 +39,7 @@ export async function getMechanicByUserId(
   userId: string
 ): Promise<Mechanic | null> {
   try {
-    const data = await api.get<Mechanic>(
+    const data = await api.get<unknown>(
       `/api/mechanics/user/${userId}`
     )
     return normalize(data)
@@ -61,7 +61,7 @@ export async function getAllMechanicsAdmin(params?: {
   if (params?.limit)  qs.set('limit',  String(params.limit))
 
   const data = await api.get<{
-    mechanics: Mechanic[]
+    mechanics: unknown[]
     total: number
     page: number
     totalPages: number
@@ -74,16 +74,16 @@ export async function createMechanic(
   payload: Omit<
     Mechanic,
     | 'id'
-    | 'createdAt'
-    | 'updatedAt'
+    | 'created_at'
+    | 'updated_at'
     | 'rating'
-    | 'reviewCount'
+    | 'review_count'
     | 'verified'
     | 'featured'
     | 'photos'
   >
 ): Promise<Mechanic> {
-  const data = await api.post<Mechanic>(
+  const data = await api.post<unknown>(
     '/api/mechanics',
     payload
   )
@@ -94,7 +94,7 @@ export async function updateMechanic(
   id: string,
   updates: Partial<Mechanic>
 ): Promise<Mechanic> {
-  const data = await api.patch<Mechanic>(
+  const data = await api.patch<unknown>(
     `/api/mechanics/${id}`,
     updates
   )

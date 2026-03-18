@@ -25,8 +25,11 @@ interface MechanicsState {
   myMechanic: Mechanic | null
   myMechanicLoading: boolean
 
-  // Admin list
+  // Admin list with pagination
   all: Mechanic[]
+  allTotal: number
+  allPage: number
+  allTotalPages: number
   allLoading: boolean
 
   error: string | null
@@ -40,6 +43,9 @@ const initialState: MechanicsState = {
   myMechanic:        null,
   myMechanicLoading: false,
   all:               [],
+  allTotal:          0,
+  allPage:           1,
+  allTotalPages:     1,
   allLoading:        false,
   error:             null,
 }
@@ -144,8 +150,11 @@ const mechanicsSlice = createSlice({
     builder
       .addCase(fetchAllMechanicsAdmin.pending,   (state) => { state.allLoading = true })
       .addCase(fetchAllMechanicsAdmin.fulfilled, (state, { payload }) => {
-        state.all        = payload
-        state.allLoading = false
+        state.all           = payload.mechanics
+        state.allTotal      = payload.total
+        state.allPage       = payload.page
+        state.allTotalPages = payload.totalPages
+        state.allLoading    = false
       })
       .addCase(fetchAllMechanicsAdmin.rejected,  (state, { error }) => {
         state.allLoading = false
@@ -204,5 +213,8 @@ export const selectByIdLoading       = (id: string) => (s: S) => s.mechanics.byI
 export const selectMyMechanic        = (s: S) => s.mechanics.myMechanic
 export const selectMyMechanicLoading = (s: S) => s.mechanics.myMechanicLoading
 export const selectAllMechanics      = (s: S) => s.mechanics.all
-export const selectAllLoading        = (s: S) => s.mechanics.allLoading
-export const selectMechanicsError    = (s: S) => s.mechanics.error
+export const selectAllTotal            = (s: S) => s.mechanics.allTotal
+export const selectAllPage             = (s: S) => s.mechanics.allPage
+export const selectAllTotalPages       = (s: S) => s.mechanics.allTotalPages
+export const selectAllLoading          = (s: S) => s.mechanics.allLoading
+export const selectMechanicsError      = (s: S) => s.mechanics.error

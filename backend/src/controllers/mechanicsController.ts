@@ -4,8 +4,6 @@ import { Mechanic } from '../models/Mechanic'
 import { Review } from '../models/Review'
 import { AuthRequest } from '../middleware/auth'
 
-const priceRangeEnum = z.enum(['low', 'mid', 'high'])
-
 const createMechanicSchema = z.object({
   name:          z.string().min(2),
   type:          z.enum(['shop', 'mobile']),
@@ -30,8 +28,10 @@ const reviewSchema = z.object({
   comment:  z.string().min(5),
 })
 
-function serializeMechanic(m: Record<string, unknown>) {
-  return { ...m, id: m._id }
+// Single cast point — all callers pass toObject() or lean() results here
+function serializeMechanic(m: unknown) {
+  const doc = m as Record<string, unknown>
+  return { ...doc, id: doc._id }
 }
 
 export async function searchMechanics(req: Request, res: Response): Promise<void> {
@@ -40,13 +40,13 @@ export async function searchMechanics(req: Request, res: Response): Promise<void
     const filter: Record<string, unknown> = { status: 'approved' }
 
     if (city)       filter.$or = [
-      { city:  new RegExp(city as string, 'i') },
-      { area:  new RegExp(city as string, 'i') },
+      { city: new RegExp(city as string, 'i') },
+      { area: new RegExp(city as string, 'i') },
     ]
-    if (service)    filter.services  = service
-    if (type)       filter.type      = type
+    if (service)    filter.services   = service
+    if (type)       filter.type       = type
     if (priceRange) filter.priceRange = priceRange
-    if (minRating)  filter.rating    = { $gte: Number(minRating) }
+    if (minRating)  filter.rating     = { $gte: Number(minRating) }
 
     if (lat && lng) {
       filter.location = {
@@ -72,7 +72,7 @@ export async function getMechanicById(req: Request, res: Response): Promise<void
   try {
     const m = await Mechanic.findById(req.params.id).lean()
     if (!m) { res.status(404).json({ error: 'Mechanic not found' }); return }
-    res.json(serializeMechanic(m as Record<string, unknown>))
+    res.json(serializeMechanic(m))
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
   }
@@ -82,7 +82,7 @@ export async function getMechanicByUserId(req: AuthRequest, res: Response): Prom
   try {
     const m = await Mechanic.findOne({ userId: req.params.userId }).lean()
     if (!m) { res.status(404).json({ error: 'No listing found for this user' }); return }
-    res.json(serializeMechanic(m as Record<string, unknown>))
+    res.json(serializeMechanic(m))
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
   }
@@ -90,8 +90,9 @@ export async function getMechanicByUserId(req: AuthRequest, res: Response): Prom
 
 export async function createMechanic(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const body = req.body
+    const body = { ...req.body }
 
+    // Normalize snake_case from frontend forms
     if (body.price_range && !body.priceRange) {
       body.priceRange = body.price_range
       delete body.price_range
@@ -114,10 +115,7 @@ export async function createMechanic(req: AuthRequest, res: Response): Promise<v
 
     res.status(201).json(serializeMechanic(mechanic.toObject()))
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      res.status(400).json({ error: err.errors })
-      return
-    }
+    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
     res.status(500).json({ error: (err as Error).message })
   }
 }
@@ -133,6 +131,7 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
     }
 
     const body = { ...req.body }
+
     // Normalize snake_case from frontend forms
     if (body.price_range && !body.priceRange) {
       body.priceRange = body.price_range
@@ -145,12 +144,8 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
     }
 
     // Prevent overwriting protected fields
-    delete body.status
-    delete body.rating
-    delete body.reviewCount
-    delete body.verified
-    delete body.featured
-    delete body.userId
+    const protected_ = ['status', 'rating', 'reviewCount', 'verified', 'featured', 'userId']
+    protected_.forEach(f => delete body[f])
 
     Object.assign(mechanic, body)
     await mechanic.save()

@@ -39,7 +39,7 @@ export default function MechanicCard({ mechanic: m, className = '' }: Props) {
           ))}
         </div>
         <span className="text-sm text-gray-400">
-          {m.rating > 0 ? `${m.rating} (${m.reviewCount})` : 'No reviews yet'}
+          {m.rating > 0 ? `${m.rating} (${m.review_count})` : 'No reviews yet'}
         </span>
       </div>
 

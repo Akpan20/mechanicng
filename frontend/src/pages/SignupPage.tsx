@@ -102,22 +102,26 @@ export default function SignupPage() {
       dispatch(setProfile(user))
 
       await createMechanic({
-        name:          data.name,
-        type:          data.type,
-        phone:         data.phone,
-        whatsapp:      data.whatsapp,
-        email:         data.email,
-        city:          data.city,
-        area:          data.area ?? '',
-        address:       data.address,
-        services:      selectedServices,
-        hours:         data.hours,
-        bio:           data.bio,
-        priceRange:    data.price_range,
-        serviceRadius: data.service_radius,
-        lat:           6.5,
-        lng:           3.3,
-      } as Parameters<typeof createMechanic>[0])
+        user_id:        user.id,
+        name:           data.name,
+        type:           data.type,
+        status:         'pending',
+        plan:           'free',
+        phone:          data.phone,
+        whatsapp:       data.whatsapp,
+        email:          data.email,
+        city:           data.city,
+        area:           data.area ?? '',
+        address:        data.address,
+        lat:            6.5,
+        lng:            3.3,
+        service_radius: data.service_radius,
+        services:       selectedServices,
+        hours:          data.hours,
+        bio:            data.bio,
+        priceRange:     data.price_range,  // Mechanic type is camelCase
+        review_count:   0,
+      } as unknown as Parameters<typeof createMechanic>[0])
 
       setStep(3)
     } catch (err) {

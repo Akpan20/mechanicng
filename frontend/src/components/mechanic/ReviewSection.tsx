@@ -7,8 +7,7 @@ interface Props {
   mechanicId: string
 }
 
-// line 10 — the type annotation parameter name is what ESLint sees
-function StarPicker({ value, onChange }: { value: number; onChange: (_: number) => void }) { // eslint-disable-line no-unused-vars
+function StarPicker({ value, onChange }: { value: number; onChange: (val: number) => void }) { // eslint-disable-line no-unused-vars
   const [hover, setHover] = useState(0)
   return (
     <div className="flex gap-1">
@@ -46,17 +45,24 @@ export default function ReviewSection({ mechanicId }: Props) {
   const [comment, setComment]   = useState('')
   const [showForm, setShowForm] = useState(false)
 
-  // ✅ Redux hook shapes
-  const { reviews, total, totalPages, isLoading } = useReviews(mechanicId, { page, limit: 5 })
-  const { mutate: submitReview, isSubmitting }     = useCreateReview(mechanicId)
-  const { mutate: removeReview }                   = useDeleteReview(mechanicId)
+  // Fixed: useReviews returns { data: { reviews, total, totalPages, page }, isLoading, error, page, setPage }
+  const { data, isLoading } = useReviews(mechanicId, page) // Fixed: second arg is page number, not options object
+  const reviews = data?.reviews ?? []
+  const total = data?.total ?? 0
+  const totalPages = data?.totalPages ?? 1
+
+  // Fixed: useCreateReview returns { mutate, mutateAsync, isPending }
+  const { mutate: submitReview, isPending } = useCreateReview(mechanicId)
+
+  const { mutate: removeReview } = useDeleteReview(mechanicId)
 
   const handleSubmit = async () => {
     if (rating === 0 || comment.trim().length < 10) return
+    
+    // Fixed: remove userName from payload, backend should get it from auth token
     await submitReview({
       rating,
       comment,
-      userName: user?.fullName ?? user?.email ?? 'Anonymous',
     })
     setRating(0)
     setComment('')
@@ -100,10 +106,10 @@ export default function ReviewSection({ mechanicId }: Props) {
           <div className="flex gap-2">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || rating === 0 || comment.trim().length < 10}
+              disabled={isPending || rating === 0 || comment.trim().length < 10}
               className="btn-primary text-sm py-2 disabled:opacity-50"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Review'}
+              {isPending ? 'Submitting...' : 'Submit Review'}
             </button>
             <button onClick={() => setShowForm(false)} className="btn-outline text-sm py-2">
               Cancel
@@ -122,7 +128,7 @@ export default function ReviewSection({ mechanicId }: Props) {
         </div>
       ) : (
         <div className="space-y-3">
-          {reviews.map(r => (
+          {reviews.map((r) => (
             <div key={r.id} className="card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
@@ -130,7 +136,7 @@ export default function ReviewSection({ mechanicId }: Props) {
                     <span className="font-semibold text-white">{r.userName}</span>
                     <StarDisplay rating={r.rating} />
                     <span className="text-xs text-gray-600">
-                      {new Date(r.created_at).toLocaleDateString('en-NG', {
+                      {new Date(r.createdAt).toLocaleDateString('en-NG', {
                         year: 'numeric', month: 'short', day: 'numeric',
                       })}
                     </span>

@@ -135,7 +135,6 @@ export interface AdSlotProps {
   adsenseFormat?: string
 }
 
-// Form data for creating/editing a campaign
 export interface CampaignFormData {
   advertiser_id: string
   name: string
@@ -153,7 +152,7 @@ export interface CampaignFormData {
   target_services: string[]
   start_date: string
   end_date: string
-  price_nairа: number
+  price_naira: number
   billing_type: BillingType
   cpm_rate: number
   cpc_rate: number

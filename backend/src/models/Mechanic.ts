@@ -1,7 +1,6 @@
 import { Schema, model, Document } from 'mongoose'
 
 export interface IMechanic extends Document {
-  _id: string
   userId: Schema.Types.ObjectId
   name: string
   type: 'shop' | 'mobile'

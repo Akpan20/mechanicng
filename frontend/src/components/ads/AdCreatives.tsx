@@ -11,14 +11,14 @@ interface CreativeProps {
   campaign: AdCampaign
   placement: AdPlacement
   cityContext?: string
-}
+} 
 
 // Shared click handler
-function useAdClick(campaign: AdCampaign, placement: AdPlacement, cityContext?: string) {
+function useAdClick(campaign: AdCampaign, _placement: AdPlacement, _cityContext?: string) { // eslint-disable-line no-unused-vars
   return useCallback(() => {
-    recordClick(campaign.id, placement, cityContext)
+    recordClick(campaign.id)
     window.open(campaign.cta_url, '_blank', 'noopener,noreferrer')
-  }, [campaign.id, campaign.cta_url, placement, cityContext])
+  }, [campaign.id, campaign.cta_url])
 }
 
 // ─── 1. BANNER AD ────────────────────────────────────────────

@@ -35,12 +35,12 @@ export default function AdvertiserFormModal({ onClose, onSubmit, isSubmitting }:
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <FormField label="Business Name *" error={errors.businessName?.message}>
-            <input className="input" placeholder="e.g. AutoZone Nigeria" {...register('businessName')} />
+          <FormField label="Business Name *" error={errors.business_name?.message}>
+            <input className="input" placeholder="e.g. AutoZone Nigeria" {...register('business_name')} />
           </FormField>
 
-          <FormField label="Contact Name *" error={errors.contactName?.message}>
-            <input className="input" placeholder="Full name of ad contact" {...register('contactName')} />
+          <FormField label="Contact Name *" error={errors.contact_name?.message}>
+            <input className="input" placeholder="Full name of ad contact" {...register('contact_name')} />
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">

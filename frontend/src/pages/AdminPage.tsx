@@ -73,8 +73,9 @@ export default function AdminPage() {
   const [isSubmittingAdvertiser, setIsSubmittingAdvertiser] = useState(false)
 
   const { campaigns = [],   isLoading: loadingCampaigns }   = useAllCampaigns()
-  const { advertisers = [], isLoading: loadingAdvertisers } = useAllAdvertisers()
-  const { stats }                                           = useAdRevenue()
+  const { advertisers = [] } = useAllAdvertisers()
+  const { stats } = useAdRevenue()
+  const loadingAdvertisers = false
 
   const createCampaign   = useCreateCampaign()
   const updateCampaign   = useUpdateCampaign()
@@ -324,13 +325,9 @@ export default function AdminPage() {
                       <CampaignRow
                         key={c.id}
                         campaign={c}
-                        onApprove={() => handleAdStatusChange(c.id, 'active')}
-                        onReject={()  => handleAdStatusChange(c.id, 'rejected')}
-                        onPause={()   => handleAdStatusChange(c.id, 'paused')}
-                        onResume={()  => handleAdStatusChange(c.id, 'active')}
+                        onStatusChange={(status) => handleAdStatusChange(c.id, status)}
                         onEdit={()    => { setEditCampaign(c); setShowCampaignForm(true) }}
                         onDelete={()  => {
-                          // ✅ window.confirm now works — no longer shadowed
                           if (window.confirm('Delete this campaign? This cannot be undone.')) {
                             deleteCampaign(c.id).catch(() => {})
                           }
@@ -479,13 +476,15 @@ export default function AdminPage() {
             setIsSubmittingAdvertiser(true)
             try {
               await createAdvertiser({
-                businessName: data.businessName,
-                contactName:  data.contactName,
-                email:        data.email,
-                phone:        data.phone,
-                website:      data.website  || undefined,
-                industry:     data.industry || undefined,
-              })
+                  businessName: data.business_name,
+                  contactName:  data.contact_name,
+                  email:        data.email,
+                  phone:        data.phone,
+                  website:      data.website  || undefined,
+                  industry:     data.industry || undefined,
+                  createdAt:    '',
+                  updateAt:     '',
+                })
               setShowAdvertiserForm(false)
             } finally {
               setIsSubmittingAdvertiser(false)

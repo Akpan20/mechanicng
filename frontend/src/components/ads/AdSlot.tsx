@@ -3,9 +3,9 @@ import { useAdSlot } from '@/hooks/useAds'
 import { recordImpression } from '@/lib/api/ads'
 import { BannerAd, CardAd, InlineAd, SpotlightAd } from './AdCreatives'
 import AdSenseUnit from './AdSenseUnit'
-import type { AdSlotProps } from '@/types/ads'
+import type { AdSlotProps, AdPlacement } from '@/types/ads'
 
-const ADSENSE_SLOTS: Partial<Record<string, string>> = {
+const ADSENSE_SLOTS: Partial<Record<AdPlacement, string>> = {
   homepage_hero:   import.meta.env.VITE_ADSENSE_SLOT_HOME_HERO     ?? 'SLOT_HOME_HERO',
   homepage_mid:    import.meta.env.VITE_ADSENSE_SLOT_HOME_MID      ?? 'SLOT_HOME_MID',
   search_top:      import.meta.env.VITE_ADSENSE_SLOT_SEARCH_TOP    ?? 'SLOT_SEARCH_TOP',
@@ -15,7 +15,7 @@ const ADSENSE_SLOTS: Partial<Record<string, string>> = {
   global_footer:   import.meta.env.VITE_ADSENSE_SLOT_FOOTER        ?? 'SLOT_FOOTER',
 }
 
-const ADSENSE_FORMATS: Record<string, 'auto' | 'rectangle' | 'horizontal'> = {
+const ADSENSE_FORMATS: Record<AdPlacement, 'auto' | 'rectangle' | 'horizontal'> = {
   homepage_hero:   'horizontal',
   homepage_mid:    'horizontal',
   search_top:      'horizontal',
@@ -36,7 +36,6 @@ function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
   const [visible, setVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  // Intersection Observer — animate when scrolled into view
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -60,13 +59,11 @@ function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
         opacity:   visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(16px)',
       }}>
-      {/* Subtle shimmer outline on entry */}
       <div style={{
         position: 'relative',
         borderRadius: '16px',
         overflow: 'hidden',
       }}>
-        {/* Shimmer sweep on mount */}
         {visible && (
           <div style={{
             position: 'absolute',
@@ -87,10 +84,6 @@ function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
           0%   { background-position: 200% center; opacity: 1; }
           100% { background-position: -200% center; opacity: 0; }
         }
-        @keyframes adPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
-          50%       { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12); }
-        }
       `}</style>
     </div>
   )
@@ -100,7 +93,7 @@ function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
 
 function AdCarousel({ campaigns, placement, cityContext }: {
   campaigns: ReturnType<typeof useAdSlot>['ads']
-  placement: string
+  placement: AdPlacement
   cityContext?: string
 }) {
   const [current, setCurrent] = useState(0)
@@ -119,7 +112,6 @@ function AdCarousel({ campaigns, placement, cityContext }: {
   }, [campaigns.length])
 
   const campaign = campaigns[current]
-  const props    = { campaign, placement, cityContext }
 
   return (
     <div style={{
@@ -127,12 +119,11 @@ function AdCarousel({ campaigns, placement, cityContext }: {
       transform:  fading ? 'scale(0.98)' : 'scale(1)',
       transition: 'opacity 300ms ease, transform 300ms ease',
     }}>
-      {campaign.format === 'banner'    && <BannerAd    {...props} />}
-      {campaign.format === 'card'      && <CardAd      {...props} />}
-      {campaign.format === 'inline'    && <InlineAd    {...props} />}
-      {campaign.format === 'spotlight' && <SpotlightAd {...props} />}
+      {campaign.format === 'banner'    && <BannerAd    campaign={campaign} placement={placement} cityContext={cityContext} />}
+      {campaign.format === 'card'      && <CardAd      campaign={campaign} placement={placement} cityContext={cityContext} />}
+      {campaign.format === 'inline'    && <InlineAd    campaign={campaign} placement={placement} cityContext={cityContext} />}
+      {campaign.format === 'spotlight' && <SpotlightAd campaign={campaign} placement={placement} cityContext={cityContext} />}
 
-      {/* Dot indicators for multiple ads */}
       {campaigns.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
           {campaigns.map((_, i) => (
@@ -175,7 +166,7 @@ export default function AdSlot({
         recordImpression(c.id)
       }
     })
-  }, [campaigns, placement, cityContext])
+  }, [campaigns])
 
   if (isLoading) return (
     <div className={className}>
@@ -248,7 +239,7 @@ export function SearchResultsWithAds({
         recordImpression(c.id)
       }
     })
-  }, [campaigns, cityContext])
+  }, [campaigns])
 
   const result: React.ReactNode[] = []
 

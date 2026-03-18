@@ -1,5 +1,5 @@
 import type { Plan, PlanId } from '@/types'
-import type { AdStatus } from '@/types'
+import type { AdStatus } from '@/types/ads'
 
 export const SERVICES = [
   'Oil Change', 'Brake Repair', 'Tire Change', 'Engine Repair',

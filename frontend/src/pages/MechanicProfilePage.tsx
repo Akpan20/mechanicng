@@ -32,7 +32,7 @@ type ReviewForm = z.infer<typeof reviewSchema>
 
 // ── Star picker ───────────────────────────────────────────────────────────────
 
-function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) { // eslint-disable-line no-unused-vars
+function StarPicker({ value, onChange }: { value: number; onChange: (_: number) => void }) { // eslint-disable-line no-unused-vars
   const [hover, setHover] = useState(0)
   return (
     <div className="flex gap-1">
@@ -85,7 +85,9 @@ export default function MechanicProfilePage() {
   if (!mechanic) return <div className="text-center py-20 text-gray-500">Mechanic not found.</div>
 
   const waNum = (mechanic.whatsapp || mechanic.phone || '').replace(/\D/g, '')
-  const [lng, lat] = mechanic.location.coordinates
+  // Fixed: mechanic uses lat/lng directly, not location.coordinates
+  const lat = mechanic.lat
+  const lng = mechanic.lng
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
 
   const onQuoteSubmit = async (data: QuoteForm) => {
@@ -155,7 +157,8 @@ export default function MechanicProfilePage() {
                   </div>
                   <span className="text-sm text-gray-400">
                     {mechanic.rating > 0
-                      ? `${mechanic.rating} · ${mechanic.reviewCount} review${mechanic.reviewCount !== 1 ? 's' : ''}`
+                      // Fixed: use review_count (snake_case)
+                      ? `${mechanic.rating} · ${mechanic.review_count} review${mechanic.review_count !== 1 ? 's' : ''}`
                       : 'No reviews yet'}
                   </span>
                 </div>
@@ -187,7 +190,8 @@ export default function MechanicProfilePage() {
           <div className="p-6 grid grid-cols-2 gap-4 border-b border-gray-800">
             {([
               ['🕐 Hours',  mechanic.hours],
-              ['📍 Type',   mechanic.type === 'mobile' ? `Mobile${mechanic.serviceRadius ? ` · ${mechanic.serviceRadius}km radius` : ''}` : 'Auto Shop'],
+              // Fixed: use service_radius (snake_case) and lat/lng directly
+              ['📍 Type',   mechanic.type === 'mobile' ? `Mobile${mechanic.service_radius ? ` · ${mechanic.service_radius}km radius` : ''}` : 'Auto Shop'],
               ['💰 Pricing', PRICE_LABELS[mechanic.priceRange]],
               ['📞 Phone',  mechanic.phone],
             ] as const).map(([label, value]) => (
@@ -218,9 +222,10 @@ export default function MechanicProfilePage() {
         {/* ── Reviews ── */}
         <div className="card overflow-hidden mb-4">
           <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-            <div>  Date
+            <div>
               <p className="section-title mb-0.5">Reviews</p>
-              <p className="text-xs text-gray-500">{mechanic.reviewCount} review{mechanic.reviewCount !== 1 ? 's' : ''}</p>
+              {/* Fixed: use review_count (snake_case) */}
+              <p className="text-xs text-gray-500">{mechanic.review_count} review{mechanic.review_count !== 1 ? 's' : ''}</p>
             </div>
             {user && !showReviewForm && (
               <button onClick={() => setShowReviewForm(true)} className="btn-primary text-sm py-2 px-4">
@@ -351,8 +356,9 @@ export default function MechanicProfilePage() {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowQuote(false)} className="btn-outline flex-1">Cancel</button>
-                  <button type="submit" disabled={submitQuote.isPending} className="btn-primary flex-1">
-                    {submitQuote.isPending ? 'Sending...' : 'Send Request'}
+                  {/* Fixed: use isLoading instead of isPending */}
+                  <button type="submit" disabled={submitQuote.isLoading} className="btn-primary flex-1">
+                    {submitQuote.isLoading ? 'Sending...' : 'Send Request'}
                   </button>
                 </div>
               </form>

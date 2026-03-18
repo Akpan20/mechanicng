@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AdCampaign } from '@/types/ads';
-import CampaignRow from './CampaignRow';
+import { AdCampaign, AdStatus } from '@/types/ads';
+import { CampaignRow } from './CampaignRow';
 
 interface CampaignListProps {
   campaigns: AdCampaign[];
@@ -95,7 +95,7 @@ export default function CampaignList({
             key={campaign.id}
             campaign={campaign}
             onEdit={() => onEdit(campaign.id)}
-            onStatusChange={(newStatus) => onStatusChange(campaign.id, newStatus)}
+            onStatusChange={(newStatus: AdStatus) => onStatusChange(campaign.id, newStatus)}
             onDelete={() => onDelete(campaign.id)}
           />
         ))}
