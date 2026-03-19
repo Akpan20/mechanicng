@@ -20,21 +20,25 @@ const ads_1 = __importDefault(require("./routes/ads"));
 const reviews_1 = __importDefault(require("./routes/reviews"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
-// ─── Security & logging ───────────────────────────────────────
-app.use((0, helmet_1.default)());
-// ✅ FIX: Use CLIENT_URL env var – must match your frontend origin exactly.
-//    Set it in Render as: CLIENT_URL = https://mechanicng-frontnd.onrender.com
+// ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173';
 console.log(`CORS allowing origin: ${allowedOrigin}`);
-app.use((0, cors_1.default)({
+const corsOptions = {
     origin: allowedOrigin,
-    credentials: true, // required if you send cookies / authorization headers
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+// ✅ Handle preflight BEFORE helmet and everything else
+app.options('*', (0, cors_1.default)(corsOptions));
+app.use((0, cors_1.default)(corsOptions));
+// ─── Security & logging ───────────────────────────────────────
+app.use((0, helmet_1.default)());
 app.use((0, morgan_1.default)('dev'));
 // Raw body needed for Paystack webhook signature verification
 app.use('/api/subscriptions/webhook', express_1.default.raw({ type: 'application/json' }));
 app.use(express_1.default.json({ limit: '10mb' }));
-// Rate limiting
+// ─── Rate limiting ────────────────────────────────────────────
 app.use('/api/auth', (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many requests' } }));
 app.use('/api', (0, express_rate_limit_1.default)({ windowMs: 1 * 60 * 1000, max: 200 }));
 // ─── Routes ───────────────────────────────────────────────────
