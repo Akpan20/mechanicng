@@ -22,7 +22,14 @@ const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
 // ─── Security & logging ───────────────────────────────────────
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({ origin: process.env.CLIENT_URL ?? 'http://localhost:5173', credentials: true }));
+// ✅ FIX: Use CLIENT_URL env var – must match your frontend origin exactly.
+//    Set it in Render as: CLIENT_URL = https://mechanicng-frontnd.onrender.com
+const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173';
+console.log(`CORS allowing origin: ${allowedOrigin}`);
+app.use((0, cors_1.default)({
+    origin: allowedOrigin,
+    credentials: true, // required if you send cookies / authorization headers
+}));
 app.use((0, morgan_1.default)('dev'));
 // Raw body needed for Paystack webhook signature verification
 app.use('/api/subscriptions/webhook', express_1.default.raw({ type: 'application/json' }));
@@ -43,7 +50,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOS
 app.use(errorHandler_1.errorHandler);
 // ─── Start ────────────────────────────────────────────────────
 (0, db_1.connectDB)().then(() => {
-    app.listen(PORT, () => console.log(`🚀 MechanicNG API running on http://localhost:${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 MechanicNG API running on port ${PORT}`));
 }).catch((err) => {
     console.error('Failed to connect to MongoDB:', err);
     process.exit(1);
