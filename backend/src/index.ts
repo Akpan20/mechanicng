@@ -19,26 +19,30 @@ import reviewsRouter        from './routes/reviews'
 const app  = express()
 const PORT = process.env.PORT ?? 4000
 
-// ─── Security & logging ───────────────────────────────────────
-app.use(helmet())
-
-// ✅ FIX: Use CLIENT_URL env var – must match your frontend origin exactly.
-//    Set it in Render as: CLIENT_URL = https://mechanicng-frontnd.onrender.com
+// ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173'
 console.log(`CORS allowing origin: ${allowedOrigin}`)
 
-app.use(cors({
+const corsOptions: cors.CorsOptions = {
   origin: allowedOrigin,
-  credentials: true, // required if you send cookies / authorization headers
-}))
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}
 
+// ✅ Handle preflight BEFORE helmet and everything else
+app.options('*', cors(corsOptions))
+app.use(cors(corsOptions))
+
+// ─── Security & logging ───────────────────────────────────────
+app.use(helmet())
 app.use(morgan('dev'))
 
 // Raw body needed for Paystack webhook signature verification
 app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
 
-// Rate limiting
+// ─── Rate limiting ────────────────────────────────────────────
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many requests' } }))
 app.use('/api',      rateLimit({ windowMs: 1  * 60 * 1000, max: 200 }))
 
