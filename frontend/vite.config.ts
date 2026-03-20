@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'MechanicNG – Find a Mechanic Near You',
         short_name: 'MechanicNG',
@@ -18,16 +18,21 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            // ✅ Cache your actual backend API
+            urlPattern: /^https:\/\/mechanicng-backend\.onrender\.com\/api\/.*/i,
             handler: 'NetworkFirst',
-            options: { cacheName: 'supabase-cache', expiration: { maxEntries: 100, maxAgeSeconds: 300 } },
+            options: {
+              cacheName: 'api-cache',
+              expiration: { maxEntries: 100, maxAgeSeconds: 300 },
+              networkTimeoutSeconds: 10,
+            },
           },
         ],
       },
@@ -40,11 +45,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          maps: ['leaflet', 'react-leaflet'],
-          ui: ['framer-motion', 'lucide-react'],
-          query: ['@tanstack/react-query'],
+          vendor:  ['react', 'react-dom', 'react-router-dom'],
+          maps:    ['leaflet', 'react-leaflet'],
+          ui:      ['framer-motion', 'lucide-react'],
+          query:   ['@tanstack/react-query'],
         },
       },
     },
