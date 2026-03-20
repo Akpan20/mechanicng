@@ -162,66 +162,69 @@ export default function AdminPage() {
               <div className="text-center py-16 text-gray-500">No mechanics in this category.</div>
             ) : (
               <div className="space-y-3">
-                {mechanics.map(m => (
-                  <div key={m.id} className="card p-5">
-                    <div className="flex gap-4 items-start flex-wrap">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-                        m.type === 'mobile' ? 'bg-purple-500/20' : 'bg-brand-500/20'
-                      }`}>
-                        {m.type === 'mobile' ? '🚗' : '🏪'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-lg">{m.name}</h3>
-                          <span className="badge text-xs" style={{ background: PLAN_COLORS[m.plan] + '20', color: PLAN_COLORS[m.plan] }}>
-                            {m.plan}
-                          </span>
-                          <span className={`badge text-xs ${
-                            m.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
-                            m.status === 'pending'  ? 'bg-amber-500/20  text-amber-400'   :
-                                                      'bg-red-500/20    text-red-400'
-                          }`}>
-                            {m.status}
-                          </span>
+                {mechanics.map(m => {
+                  console.log('created_at raw value:', m.created_at, typeof m.created_at)
+                  return (
+                    <div key={m.id} className="card p-5">
+                      <div className="flex gap-4 items-start flex-wrap">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+                          m.type === 'mobile' ? 'bg-purple-500/20' : 'bg-brand-500/20'
+                        }`}>
+                          {m.type === 'mobile' ? '🚗' : '🏪'}
                         </div>
-                        <p className="text-gray-400 text-sm mb-1">
-                          📍 {m.area && `${m.area}, `}{m.city} · 📞 {m.phone} · ✉ {m.email}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.services.slice(0, 4).map(s => <span key={s} className="tag text-xs">{s}</span>)}
-                          {m.services.length > 4 && <span className="tag text-xs">+{m.services.length - 4}</span>}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-bold text-lg">{m.name}</h3>
+                            <span className="badge text-xs" style={{ background: PLAN_COLORS[m.plan] + '20', color: PLAN_COLORS[m.plan] }}>
+                              {m.plan}
+                            </span>
+                            <span className={`badge text-xs ${
+                              m.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                              m.status === 'pending'  ? 'bg-amber-500/20  text-amber-400'   :
+                                                        'bg-red-500/20    text-red-400'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </div>
+                          <p className="text-gray-400 text-sm mb-1">
+                            📍 {m.area && `${m.area}, `}{m.city} · 📞 {m.phone} · ✉ {m.email}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {m.services.slice(0, 4).map(s => <span key={s} className="tag text-xs">{s}</span>)}
+                            {m.services.length > 4 && <span className="tag text-xs">+{m.services.length - 4}</span>}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 flex-shrink-0">
+                          {m.status !== 'approved' && (
+                            <button onClick={() => handleMechanicStatus(m.id, 'approved', m.name)}
+                              disabled={updateStatus.isPending}
+                              className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                              ✓ Approve
+                            </button>
+                          )}
+                          {m.status !== 'rejected' && (
+                            <button onClick={() => handleMechanicStatus(m.id, 'rejected', m.name)}
+                              disabled={updateStatus.isPending}
+                              className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                              ✗ Reject
+                            </button>
+                          )}
+                          {m.status === 'approved' && (
+                            <button onClick={() => handleMechanicStatus(m.id, 'suspended', m.name)}
+                              disabled={updateStatus.isPending}
+                              className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-400 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors disabled:opacity-50">
+                              ⛔ Suspend
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 flex-shrink-0">
-                        {m.status !== 'approved' && (
-                          <button onClick={() => handleMechanicStatus(m.id, 'approved', m.name)}
-                            disabled={updateStatus.isPending}
-                            className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50">
-                            ✓ Approve
-                          </button>
-                        )}
-                        {m.status !== 'rejected' && (
-                          <button onClick={() => handleMechanicStatus(m.id, 'rejected', m.name)}
-                            disabled={updateStatus.isPending}
-                            className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors disabled:opacity-50">
-                            ✗ Reject
-                          </button>
-                        )}
-                        {m.status === 'approved' && (
-                          <button onClick={() => handleMechanicStatus(m.id, 'suspended', m.name)}
-                            disabled={updateStatus.isPending}
-                            className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-400 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors disabled:opacity-50">
-                            ⛔ Suspend
-                          </button>
-                        )}
+                      <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-600">
+                        <span>ID: {m.id}</span>
+                        <span>Registered: {new Date(m.created_at).toLocaleDateString('en-NG')}</span>
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-600">
-                      <span>ID: {m.id}</span>
-                      <span>Registered: {new Date(m.created_at).toLocaleDateString('en-NG')}</span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 
