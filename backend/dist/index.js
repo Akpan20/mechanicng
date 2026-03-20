@@ -26,7 +26,7 @@ console.log(`CORS allowing origin: ${allowedOrigin}`);
 const corsOptions = {
     origin: allowedOrigin,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 };
 // ✅ Handle preflight BEFORE helmet and everything else
