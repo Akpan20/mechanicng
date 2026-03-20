@@ -34,4 +34,5 @@ frontend/dist/
 frontend/.vite/
 
 # ── Uploads (if stored locally during dev) ────────────────────────────────────
-uploads/
+uploads/backend/.env
+.env
