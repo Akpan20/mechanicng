@@ -1,19 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
-import { useAdSlot } from '@/hooks/useAds'
-import { recordImpression } from '@/lib/api/ads'
-import { BannerAd, CardAd, InlineAd, SpotlightAd } from './AdCreatives'
-import AdSenseUnit from './AdSenseUnit'
-import type { AdSlotProps, AdPlacement } from '@/types/ads'
+// components/AdSlot.tsx (rewritten)
+import { useEffect, useRef, useState } from 'react';
+import { useAdSlot } from '@/hooks/useAds';
+import { recordImpression } from '@/lib/api/ads';
+import { BannerAd, CardAd, InlineAd, SpotlightAd } from './AdCreatives';
+import AdSenseUnit from './AdSenseUnit';
+import type { AdSlotProps, AdPlacement } from '@/types/ads';
 
 const ADSENSE_SLOTS: Partial<Record<AdPlacement, string>> = {
-  homepage_hero:   import.meta.env.VITE_ADSENSE_SLOT_HOME_HERO     ?? 'SLOT_HOME_HERO',
-  homepage_mid:    import.meta.env.VITE_ADSENSE_SLOT_HOME_MID      ?? 'SLOT_HOME_MID',
-  search_top:      import.meta.env.VITE_ADSENSE_SLOT_SEARCH_TOP    ?? 'SLOT_SEARCH_TOP',
-  search_inline:   import.meta.env.VITE_ADSENSE_SLOT_SEARCH_INLINE ?? 'SLOT_SEARCH_INLINE',
-  profile_sidebar: import.meta.env.VITE_ADSENSE_SLOT_PROFILE_SIDE  ?? 'SLOT_PROFILE_SIDE',
-  profile_bottom:  import.meta.env.VITE_ADSENSE_SLOT_PROFILE_BOT   ?? 'SLOT_PROFILE_BOT',
-  global_footer:   import.meta.env.VITE_ADSENSE_SLOT_FOOTER        ?? 'SLOT_FOOTER',
-}
+  homepage_hero:   import.meta.env.VITE_ADSENSE_SLOT_HOME_HERO,
+  homepage_mid:    import.meta.env.VITE_ADSENSE_SLOT_HOME_MID,
+  search_top:      import.meta.env.VITE_ADSENSE_SLOT_SEARCH_TOP,
+  search_inline:   import.meta.env.VITE_ADSENSE_SLOT_SEARCH_INLINE,
+  profile_sidebar: import.meta.env.VITE_ADSENSE_SLOT_PROFILE_SIDE,
+  profile_bottom:  import.meta.env.VITE_ADSENSE_SLOT_PROFILE_BOT,
+  global_footer:   import.meta.env.VITE_ADSENSE_SLOT_FOOTER,
+};
 
 const ADSENSE_FORMATS: Record<AdPlacement, 'auto' | 'rectangle' | 'horizontal'> = {
   homepage_hero:   'horizontal',
@@ -23,58 +24,69 @@ const ADSENSE_FORMATS: Record<AdPlacement, 'auto' | 'rectangle' | 'horizontal'> 
   profile_sidebar: 'rectangle',
   profile_bottom:  'horizontal',
   global_footer:   'horizontal',
-}
+};
 
 // ── Animation wrapper ─────────────────────────────────────────
 
 interface AnimatedAdProps {
-  children: React.ReactNode
-  delay?: number
+  children: React.ReactNode;
+  delay?: number;
 }
 
 function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
-  const [visible, setVisible] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
+    const el = ref.current;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
       { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
       ref={ref}
       style={{
-        transitionDelay:  `${delay}ms`,
+        transitionDelay: `${delay}ms`,
         transitionProperty: 'opacity, transform',
         transitionDuration: '500ms',
         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-        opacity:   visible ? 1 : 0,
+        opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(16px)',
-      }}>
-      <div style={{
-        position: 'relative',
-        borderRadius: '16px',
-        overflow: 'hidden',
-      }}>
+      }}
+    >
+      <div
+        style={{
+          position: 'relative',
+          borderRadius: '16px',
+          overflow: 'hidden',
+        }}
+      >
         {visible && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
-            backgroundSize: '200% 100%',
-            animation: 'adShimmer 0.8s ease-out forwards',
-            pointerEvents: 'none',
-            zIndex: 1,
-            borderRadius: '16px',
-          }} />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
+              backgroundSize: '200% 100%',
+              animation: 'adShimmer 0.8s ease-out forwards',
+              pointerEvents: 'none',
+              zIndex: 1,
+              borderRadius: '16px',
+            }}
+          />
         )}
         {children}
       </div>
@@ -86,52 +98,72 @@ function AnimatedAd({ children, delay = 0 }: AnimatedAdProps) {
         }
       `}</style>
     </div>
-  )
+  );
 }
 
-// ── Rotating multi-ad carousel ────────────────────────────────
+// ── Rotating multi‑ad carousel ────────────────────────────────
 
-function AdCarousel({ campaigns, placement, cityContext }: {
-  campaigns: ReturnType<typeof useAdSlot>['ads']
-  placement: AdPlacement
-  cityContext?: string
+function AdCarousel({
+  campaigns,
+  placement,
+  cityContext,
+}: {
+  campaigns: ReturnType<typeof useAdSlot>['ads'];
+  placement: AdPlacement;
+  cityContext?: string;
 }) {
-  const [current, setCurrent] = useState(0)
-  const [fading, setFading]   = useState(false)
+  const [current, setCurrent] = useState(0);
+  const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (campaigns.length <= 1) return
+    if (campaigns.length <= 1) return;
     const interval = setInterval(() => {
-      setFading(true)
+      setFading(true);
       setTimeout(() => {
-        setCurrent(c => (c + 1) % campaigns.length)
-        setFading(false)
-      }, 300)
-    }, 6000)
-    return () => clearInterval(interval)
-  }, [campaigns.length])
+        setCurrent((c) => (c + 1) % campaigns.length);
+        setFading(false);
+      }, 300);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [campaigns.length]);
 
-  const campaign = campaigns[current]
+  const campaign = campaigns[current];
 
   return (
-    <div style={{
-      opacity:    fading ? 0 : 1,
-      transform:  fading ? 'scale(0.98)' : 'scale(1)',
-      transition: 'opacity 300ms ease, transform 300ms ease',
-    }}>
-      {campaign.format === 'banner'    && <BannerAd    campaign={campaign} placement={placement} cityContext={cityContext} />}
-      {campaign.format === 'card'      && <CardAd      campaign={campaign} placement={placement} cityContext={cityContext} />}
-      {campaign.format === 'inline'    && <InlineAd    campaign={campaign} placement={placement} cityContext={cityContext} />}
-      {campaign.format === 'spotlight' && <SpotlightAd campaign={campaign} placement={placement} cityContext={cityContext} />}
+    <div
+      style={{
+        opacity: fading ? 0 : 1,
+        transform: fading ? 'scale(0.98)' : 'scale(1)',
+        transition: 'opacity 300ms ease, transform 300ms ease',
+      }}
+    >
+      {campaign.format === 'banner' && (
+        <BannerAd campaign={campaign} placement={placement} cityContext={cityContext} />
+      )}
+      {campaign.format === 'card' && (
+        <CardAd campaign={campaign} placement={placement} cityContext={cityContext} />
+      )}
+      {campaign.format === 'inline' && (
+        <InlineAd campaign={campaign} placement={placement} cityContext={cityContext} />
+      )}
+      {campaign.format === 'spotlight' && (
+        <SpotlightAd campaign={campaign} placement={placement} cityContext={cityContext} />
+      )}
 
       {campaigns.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
           {campaigns.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setFading(true); setTimeout(() => { setCurrent(i); setFading(false) }, 300) }}
+              onClick={() => {
+                setFading(true);
+                setTimeout(() => {
+                  setCurrent(i);
+                  setFading(false);
+                }, 300);
+              }}
               style={{
-                width:  i === current ? '20px' : '6px',
+                width: i === current ? '20px' : '6px',
                 height: '6px',
                 borderRadius: '3px',
                 background: i === current ? 'rgb(249, 115, 22)' : 'rgba(255,255,255,0.2)',
@@ -145,63 +177,64 @@ function AdCarousel({ campaigns, placement, cityContext }: {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ── Main AdSlot ───────────────────────────────────────────────
 
-export default function AdSlot({
-  placement,
-  cityContext,
-  className = '',
-  adsenseSlotId,
-}: AdSlotProps) {
-  const { ads: campaigns = [], isLoading } = useAdSlot(placement, cityContext)
-  const impressionFired = useRef<Set<string>>(new Set())
+export default function AdSlot({ placement, cityContext, className = '', adsenseSlotId }: AdSlotProps) {
+  const { ads: campaigns = [], isLoading } = useAdSlot(placement, cityContext);
+  const impressionFired = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    campaigns.forEach(c => {
+    campaigns.forEach((c) => {
       if (!impressionFired.current.has(c.id)) {
-        impressionFired.current.add(c.id)
-        recordImpression(c.id)
+        impressionFired.current.add(c.id);
+        recordImpression(c.id);
       }
-    })
-  }, [campaigns])
+    });
+  }, [campaigns]);
 
-  if (isLoading) return (
-    <div className={className}>
-      <div style={{
-        height: '90px',
-        borderRadius: '16px',
-        background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
-        backgroundSize: '200% 100%',
-        animation: 'skeletonPulse 1.5s ease-in-out infinite',
-      }}>
-        <style>{`
-          @keyframes skeletonPulse {
-            0%   { background-position: 200% center; }
-            100% { background-position: -200% center; }
-          }
-        `}</style>
+  if (isLoading) {
+    return (
+      <div className={className}>
+        <div
+          style={{
+            height: '90px',
+            borderRadius: '16px',
+            background:
+              'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'skeletonPulse 1.5s ease-in-out infinite',
+          }}
+        >
+          <style>{`
+            @keyframes skeletonPulse {
+              0%   { background-position: 200% center; }
+              100% { background-position: -200% center; }
+            }
+          `}</style>
+        </div>
       </div>
-    </div>
-  )
+    );
+  }
 
+  // Render custom campaigns if available
   if (campaigns.length > 0) {
     return (
       <AnimatedAd>
-        <div className={className}>
+        <div key={`custom-${placement}`} className={className}>
           <AdCarousel campaigns={campaigns} placement={placement} cityContext={cityContext} />
         </div>
       </AnimatedAd>
-    )
+    );
   }
 
-  const slotId = adsenseSlotId ?? ADSENSE_SLOTS[placement]
+  const slotId = adsenseSlotId ?? ADSENSE_SLOTS[placement];
   if (slotId) {
     return (
       <AnimatedAd>
-        <div className={className}>
+        <div key={`adsense-${slotId}`} className={className}>
           <AdSenseUnit
             slotId={slotId}
             format={ADSENSE_FORMATS[placement] ?? 'auto'}
@@ -209,18 +242,18 @@ export default function AdSlot({
           />
         </div>
       </AnimatedAd>
-    )
+    );
   }
 
-  return null
+  return null;
 }
 
 // ── SearchResultsWithAds ──────────────────────────────────────
 
 interface SearchAdsProps {
-  children:    React.ReactNode[]
-  cityContext?: string
-  injectEvery?: number
+  children: React.ReactNode[];
+  cityContext?: string;
+  injectEvery?: number;
 }
 
 export function SearchResultsWithAds({
@@ -228,54 +261,44 @@ export function SearchResultsWithAds({
   cityContext,
   injectEvery = 5,
 }: SearchAdsProps) {
-  const { ads: campaigns = [] } = useAdSlot('search_inline', cityContext)
-  const impressionFired = useRef<Set<string>>(new Set())
-  let adIndex = 0
+  const { ads: campaigns = [] } = useAdSlot('search_inline', cityContext);
+  const inlineSlotId = ADSENSE_SLOTS['search_inline'];
 
-  useEffect(() => {
-    campaigns.forEach(c => {
-      if (!impressionFired.current.has(c.id)) {
-        impressionFired.current.add(c.id)
-        recordImpression(c.id)
-      }
-    })
-  }, [campaigns])
+  // Only consider AdSense if the slot ID is a valid number string
+  const isValidAdSense = inlineSlotId && /^\d+$/.test(inlineSlotId);
 
-  const result: React.ReactNode[] = []
+  let adIndex = 0;
+  const result: React.ReactNode[] = [];
 
   children.forEach((child, i) => {
-    result.push(child)
+    result.push(child);
 
-    const isInjectionPoint = (i + 1) % injectEvery === 0
-
-    if (isInjectionPoint) {
+    if ((i + 1) % injectEvery === 0) {
       if (campaigns[adIndex]) {
-        const campaign = campaigns[adIndex]
+        const campaign = campaigns[adIndex];
         result.push(
-          <AnimatedAd key={`ad-card-${campaign.id}-${i}`} delay={100}>
-            <CardAd
-              campaign={campaign}
-              placement="search_inline"
-              cityContext={cityContext}
-            />
+          <AnimatedAd key={`internal-ad-${campaign.id}-${i}`} delay={100}>
+            <CardAd campaign={campaign} placement="search_inline" cityContext={cityContext} />
           </AnimatedAd>
-        )
-        adIndex++
-      } else {
+        );
+        adIndex++;
+      } else if (isValidAdSense) {
+        // Use the same format as defined for this placement
+        const format = ADSENSE_FORMATS['search_inline'] ?? 'rectangle';
         result.push(
           <AnimatedAd key={`adsense-inline-${i}`} delay={100}>
-            <div className="rounded-2xl overflow-hidden">
+            <div className="rounded-2xl overflow-hidden bg-white/5">
               <AdSenseUnit
-                slotId={ADSENSE_SLOTS['search_inline'] ?? ''}
-                format="rectangle"
+                slotId={inlineSlotId as string}
+                format={format}
                 className="min-h-[200px]"
               />
             </div>
           </AnimatedAd>
-        )
+        );
       }
     }
-  })
+  });
 
-  return <>{result}</>
+  return <>{result}</>;
 }
