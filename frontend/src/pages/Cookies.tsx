@@ -1,19 +1,19 @@
 // src/pages/Cookies.tsx
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { getConsent } from '@/components/CookieConsentBanner'
+import { getConsent, CONSENT_KEY } from '@/lib/constants'
 
 export default function CookiesPage() {
   const navigate = useNavigate()
   const [consent, setConsent] = useState(getConsent())
 
   const handleAccept = () => {
-    localStorage.setItem('mechanicng_cookie_consent', 'accepted')
+    localStorage.setItem(CONSENT_KEY, 'accepted')
     setConsent('accepted')
   }
 
   const handleDecline = () => {
-    localStorage.setItem('mechanicng_cookie_consent', 'declined')
+    localStorage.setItem(CONSENT_KEY, 'declined')
     setConsent('declined')
   }
 

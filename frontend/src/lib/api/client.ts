@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */ // RequestInit and other globals are TypeScript types
 
-import { store } from '../../store'
-import { logout } from '../store/authSlice'
+import { store } from '@/store'
+import { logout } from '@/store/authSlice'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
 
