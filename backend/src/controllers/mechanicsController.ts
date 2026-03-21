@@ -30,8 +30,17 @@ const reviewSchema = z.object({
 
 // Single cast point — all callers pass toObject() or lean() results here
 function serializeMechanic(m: unknown) {
-  const doc = m as Record<string, unknown>
-  return { ...doc, id: doc._id }
+  const doc = m as Record<string, any>
+  const { _id, __v, createdAt, updatedAt, reviewCount, location, ...rest } = doc
+  return {
+    ...rest,
+    id:           _id,
+    created_at:   createdAt,
+    updated_at:   updatedAt,
+    review_count: reviewCount,
+    lat: location?.coordinates?.[1] ?? null,
+    lng: location?.coordinates?.[0] ?? null,
+  }
 }
 
 export async function searchMechanics(req: Request, res: Response): Promise<void> {
