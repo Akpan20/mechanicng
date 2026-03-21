@@ -32,7 +32,7 @@ export interface Mechanic {
   bio?: string
   photos: string[]
   rating: number
-  review_count: number
+  reviewCount: number
   verified: boolean
   featured: boolean
   created_at: string
