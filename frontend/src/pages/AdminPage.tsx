@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useAllMechanicsAdmin, useUpdateMechanicStatus } from '@/hooks/useMechanics'
-import type { MechanicStatus } from '@/types'
+import type { Mechanic, MechanicStatus } from '@/types'
 import { PLAN_COLORS, STATUS_COLORS } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import {
@@ -23,6 +23,22 @@ const MECH_TABS: { id: MechanicStatus | 'all'; label: string }[] = [
   { id: 'all',       label: '📋 All'       },
 ]
 
+// Extract registration date from created_at or fallback to ObjectID timestamp
+function getRegisteredDate(m: Mechanic): string {
+  if (m.created_at) {
+    const d = new Date(m.created_at)
+    if (!isNaN(d.getTime())) return d.toLocaleDateString('en-NG')
+  }
+  try {
+    const timestamp = parseInt(m.id.substring(0, 8), 16) * 1000
+    const d = new Date(timestamp)
+    if (!isNaN(d.getTime())) return d.toLocaleDateString('en-NG')
+  } catch {
+    // ObjectID parsing failed — fall through to 'Unknown'
+  }
+  return 'Unknown'
+}
+
 export default function AdminPage() {
   const [mainTab, setMainTab] = useState<'mechanics' | 'ads'>('mechanics')
 
@@ -42,7 +58,6 @@ export default function AdminPage() {
   const mechanics    = data?.mechanics ?? []
   const updateStatus = useUpdateMechanicStatus()
 
-  // ✅ renamed from `confirm` to avoid shadowing window.confirm
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean; id?: string; status?: MechanicStatus; name?: string
   }>({ open: false })
@@ -72,10 +87,10 @@ export default function AdminPage() {
   const [isSubmittingCampaign, setIsSubmittingCampaign]     = useState(false)
   const [isSubmittingAdvertiser, setIsSubmittingAdvertiser] = useState(false)
 
-  const { campaigns = [],   isLoading: loadingCampaigns }   = useAllCampaigns()
-  const { advertisers = [] } = useAllAdvertisers()
-  const { stats } = useAdRevenue()
-  const loadingAdvertisers = false
+  const { campaigns = [],   isLoading: loadingCampaigns } = useAllCampaigns()
+  const { advertisers = [] }                               = useAllAdvertisers()
+  const { stats }                                          = useAdRevenue()
+  const loadingAdvertisers                                 = false
 
   const createCampaign   = useCreateCampaign()
   const updateCampaign   = useUpdateCampaign()
@@ -109,8 +124,8 @@ export default function AdminPage() {
         {/* Main tabs */}
         <div className="flex gap-2 mb-8">
           {[
-            { id: 'mechanics', label: '🔧 Mechanics',  badge: counts.pending },
-            { id: 'ads',       label: '📢 Advertising', badge: null },
+            { id: 'mechanics', label: '🔧 Mechanics',   badge: counts.pending },
+            { id: 'ads',       label: '📢 Advertising', badge: null           },
           ].map(t => (
             <button key={t.id} onClick={() => setMainTab(t.id as typeof mainTab)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
@@ -118,7 +133,9 @@ export default function AdminPage() {
               }`}>
               {t.label}
               {t.badge ? (
-                <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{t.badge}</span>
+                <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {t.badge}
+                </span>
               ) : null}
             </button>
           ))}
@@ -152,8 +169,12 @@ export default function AdminPage() {
                   </button>
                 ))}
               </div>
-              <input className="input flex-1 text-sm" placeholder="Search by name or city..."
-                value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+              <input
+                className="input flex-1 text-sm"
+                placeholder="Search by name or city..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1) }}
+              />
             </div>
 
             {isLoading ? (
@@ -162,68 +183,80 @@ export default function AdminPage() {
               <div className="text-center py-16 text-gray-500">No mechanics in this category.</div>
             ) : (
               <div className="space-y-3">
-                {mechanics.map(m => {
-                  return (
-                    <div key={m.id} className="card p-5">
-                      <div className="flex gap-4 items-start flex-wrap">
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-                          m.type === 'mobile' ? 'bg-purple-500/20' : 'bg-brand-500/20'
-                        }`}>
-                          {m.type === 'mobile' ? '🚗' : '🏪'}
+                {mechanics.map(m => (
+                  <div key={m.id} className="card p-5">
+                    <div className="flex gap-4 items-start flex-wrap">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+                        m.type === 'mobile' ? 'bg-purple-500/20' : 'bg-brand-500/20'
+                      }`}>
+                        {m.type === 'mobile' ? '🚗' : '🏪'}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-bold text-lg">{m.name}</h3>
+                          <span
+                            className="badge text-xs"
+                            style={{ background: PLAN_COLORS[m.plan] + '20', color: PLAN_COLORS[m.plan] }}
+                          >
+                            {m.plan === 'pro' ? '⭐ Pro' : m.plan === 'standard' ? 'Standard' : 'Free'}
+                          </span>
+                          <span className={`badge text-xs ${
+                            m.status === 'approved'  ? 'bg-emerald-500/20 text-emerald-400' :
+                            m.status === 'pending'   ? 'bg-amber-500/20  text-amber-400'   :
+                            m.status === 'suspended' ? 'bg-gray-500/20   text-gray-400'    :
+                                                       'bg-red-500/20    text-red-400'
+                          }`}>
+                            {m.status}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-bold text-lg">{m.name}</h3>
-                            <span className="badge text-xs" style={{ background: PLAN_COLORS[m.plan] + '20', color: PLAN_COLORS[m.plan] }}>
-                              {m.plan}
-                            </span>
-                            <span className={`badge text-xs ${
-                              m.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
-                              m.status === 'pending'  ? 'bg-amber-500/20  text-amber-400'   :
-                                                        'bg-red-500/20    text-red-400'
-                            }`}>
-                              {m.status}
-                            </span>
-                          </div>
-                          <p className="text-gray-400 text-sm mb-1">
-                            📍 {m.area && `${m.area}, `}{m.city} · 📞 {m.phone} · ✉ {m.email}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {m.services.slice(0, 4).map(s => <span key={s} className="tag text-xs">{s}</span>)}
-                            {m.services.length > 4 && <span className="tag text-xs">+{m.services.length - 4}</span>}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 flex-shrink-0">
-                          {m.status !== 'approved' && (
-                            <button onClick={() => handleMechanicStatus(m.id, 'approved', m.name)}
-                              disabled={updateStatus.isPending}
-                              className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50">
-                              ✓ Approve
-                            </button>
-                          )}
-                          {m.status !== 'rejected' && (
-                            <button onClick={() => handleMechanicStatus(m.id, 'rejected', m.name)}
-                              disabled={updateStatus.isPending}
-                              className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors disabled:opacity-50">
-                              ✗ Reject
-                            </button>
-                          )}
-                          {m.status === 'approved' && (
-                            <button onClick={() => handleMechanicStatus(m.id, 'suspended', m.name)}
-                              disabled={updateStatus.isPending}
-                              className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-400 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors disabled:opacity-50">
-                              ⛔ Suspend
-                            </button>
+                        <p className="text-gray-400 text-sm mb-1">
+                          📍 {m.area ? `${m.area}, ` : ''}{m.city} · 📞 {m.phone} · ✉ {m.email}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {m.services.slice(0, 4).map(s => (
+                            <span key={s} className="tag text-xs">{s}</span>
+                          ))}
+                          {m.services.length > 4 && (
+                            <span className="tag text-xs">+{m.services.length - 4}</span>
                           )}
                         </div>
                       </div>
-                      <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-600">
-                        <span>ID: {m.id}</span>
-                        <span>Registered: {m.created_at ? new Date(m.created_at).toLocaleDateString('en-NG') : 'Unknown'}</span>
+
+                      <div className="flex flex-wrap gap-2 flex-shrink-0">
+                        {m.status !== 'approved' && (
+                          <button
+                            onClick={() => handleMechanicStatus(m.id, 'approved', m.name)}
+                            disabled={updateStatus.isPending}
+                            className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                            ✓ Approve
+                          </button>
+                        )}
+                        {m.status !== 'rejected' && (
+                          <button
+                            onClick={() => handleMechanicStatus(m.id, 'rejected', m.name)}
+                            disabled={updateStatus.isPending}
+                            className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                            ✗ Reject
+                          </button>
+                        )}
+                        {m.status === 'approved' && (
+                          <button
+                            onClick={() => handleMechanicStatus(m.id, 'suspended', m.name)}
+                            disabled={updateStatus.isPending}
+                            className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-400 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors disabled:opacity-50">
+                            ⛔ Suspend
+                          </button>
+                        )}
                       </div>
                     </div>
-                  )
-                })}
+
+                    <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-600">
+                      <span>ID: {m.id}</span>
+                      <span>Registered: {getRegisteredDate(m)}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -266,10 +299,10 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {[
-                ['💰', `₦${totalRevenue.toLocaleString()}`,   'Revenue This Month'],
-                ['📢', activeCampaigns.toString(),             'Active Campaigns'],
-                ['👁️', totalImpressions.toLocaleString(),     'Total Impressions'],
-                ['🖱️', totalClicks.toLocaleString(),          'Total Clicks'],
+                ['💰', `₦${totalRevenue.toLocaleString()}`,       'Revenue This Month'],
+                ['📢', activeCampaigns.toString(),                 'Active Campaigns'  ],
+                ['👁️', totalImpressions.toLocaleString(),         'Total Impressions' ],
+                ['🖱️', totalClicks.toLocaleString(),              'Total Clicks'      ],
               ].map(([icon, val, label]) => (
                 <div key={label} className="card p-5 text-center">
                   <div className="text-2xl mb-1">{icon}</div>
@@ -281,9 +314,9 @@ export default function AdminPage() {
 
             <div className="flex gap-1 bg-surface-800 border border-gray-800 rounded-xl p-1 mb-6 w-fit">
               {[
-                { id: 'campaigns',   label: `📢 Campaigns (${campaigns.length})` },
+                { id: 'campaigns',   label: `📢 Campaigns (${campaigns.length})`     },
                 { id: 'advertisers', label: `🏢 Advertisers (${advertisers.length})` },
-                { id: 'revenue',     label: '📊 Revenue' },
+                { id: 'revenue',     label: '📊 Revenue'                              },
               ].map(t => (
                 <button key={t.id} onClick={() => setAdsTab(t.id as typeof adsTab)}
                   className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
@@ -327,9 +360,9 @@ export default function AdminPage() {
                       <CampaignRow
                         key={c.id}
                         campaign={c}
-                        onStatusChange={(status) => handleAdStatusChange(c.id, status)}
-                        onEdit={()    => { setEditCampaign(c); setShowCampaignForm(true) }}
-                        onDelete={()  => {
+                        onStatusChange={status => handleAdStatusChange(c.id, status)}
+                        onEdit={() => { setEditCampaign(c); setShowCampaignForm(true) }}
+                        onDelete={() => {
                           if (window.confirm('Delete this campaign? This cannot be undone.')) {
                             deleteCampaign(c.id).catch(() => {})
                           }
@@ -379,11 +412,11 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
                   {[
                     ['💰 Revenue This Month', `₦${(stats?.revenue_this_month ?? 0).toLocaleString()}`],
-                    ['📢 Active Campaigns',    stats?.active_campaigns  ?? 0],
-                    ['⏳ Pending Approval',    stats?.pending_approval  ?? 0],
-                    ['🏢 Total Advertisers',   stats?.total_advertisers ?? 0],
-                    ['👁️ Total Impressions',  (stats?.total_impressions ?? 0).toLocaleString()],
-                    ['🖱️ Total Clicks',       (stats?.total_clicks     ?? 0).toLocaleString()],
+                    ['📢 Active Campaigns',    stats?.active_campaigns  ?? 0                          ],
+                    ['⏳ Pending Approval',    stats?.pending_approval  ?? 0                          ],
+                    ['🏢 Total Advertisers',   stats?.total_advertisers ?? 0                          ],
+                    ['👁️ Total Impressions',  (stats?.total_impressions ?? 0).toLocaleString()        ],
+                    ['🖱️ Total Clicks',       (stats?.total_clicks     ?? 0).toLocaleString()        ],
                   ].map(([label, val]) => (
                     <div key={label} className="card p-5 text-center">
                       <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">{label}</div>
@@ -507,7 +540,8 @@ export default function AdminPage() {
             </p>
             <div className="flex gap-3 justify-end">
               <button className="btn-outline" onClick={() => setConfirmDialog({ open: false })}>Cancel</button>
-              <button className="btn-primary bg-red-500 hover:bg-red-600"
+              <button
+                className="btn-primary bg-red-500 hover:bg-red-600"
                 onClick={async () => {
                   setConfirmDialog({ open: false })
                   try {
