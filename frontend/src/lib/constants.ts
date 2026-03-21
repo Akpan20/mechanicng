@@ -99,3 +99,20 @@ export type ConsentState = 'accepted' | 'declined' | null
 export function getConsent(): ConsentState {
   return localStorage.getItem(CONSENT_KEY) as ConsentState
 }
+
+// src/lib/constants.ts — add at the bottom
+export const SITE_STATS = {
+  cities:    15,
+  avgRating: '4.6',
+  verified:  100,
+} as const
+
+export const BRAND_COLOR      = 'rgb(249,115,22)'
+export const BRAND_COLOR_DARK = 'rgb(239,68,68)'
+
+export const HERO_GRADIENT = `
+  radial-gradient(ellipse 120% 70% at 50% -5%,  rgba(249,115,22,0.13) 0%, transparent 65%),
+  radial-gradient(ellipse 50%  50% at 85%  85%, rgba(239,68,68,0.07)  0%, transparent 60%)
+`
+export const CTA_GRADIENT = 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(239,68,68,0.03) 100%)'
+export const BRAND_GRADIENT = 'linear-gradient(130deg, rgb(249,115,22) 0%, rgb(239,68,68) 100%)'

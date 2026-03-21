@@ -6,7 +6,10 @@ import { useMechanics } from '@/hooks/useMechanics'
 import { attachDistances } from '@/lib/geo'
 import MechanicCard from '@/components/mechanic/MechanicCard'
 import AdSlot from '@/components/ads/AdSlot'
-import { SERVICES, NIGERIAN_CITIES } from '@/lib/constants'
+import {
+  SERVICES, NIGERIAN_CITIES,
+  SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
+} from '@/lib/constants'
 import { useAppDispatch } from '@/store/hooks'
 import { setQuery, setUserLocation, setResults, setHasSearched } from '@/store/searchSlice'
 
@@ -113,10 +116,10 @@ export default function HomePage() {
   }
 
   const stats: StatItem[] = [
-    { icon: '🔧', value: featured.length, suffix: '+', label: 'Mechanics' },
-    { icon: '🏙️', value: 15,              suffix: '+', label: 'Cities'    },
-    { icon: '⭐', static: '4.6',                       label: 'Avg Rating' },
-    { icon: '✓',  value: 100, suffix: '%',             label: 'Verified'   },
+    { icon: '🔧', value: featured.length,    suffix: '+', label: 'Mechanics' },
+    { icon: '🏙️', value: SITE_STATS.cities,  suffix: '+', label: 'Cities'    },
+    { icon: '⭐', static: SITE_STATS.avgRating,            label: 'Avg Rating' },
+    { icon: '✓',  value: SITE_STATS.verified, suffix: '%', label: 'Verified'   },
   ]
 
   return (
@@ -131,10 +134,7 @@ export default function HomePage() {
           HERO
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden" style={{
-        background: `
-          radial-gradient(ellipse 120% 70% at 50% -5%,  rgba(249,115,22,0.13) 0%, transparent 65%),
-          radial-gradient(ellipse 50%  50% at 85%  85%, rgba(239,68,68,0.07)  0%, transparent 60%)
-        `,
+        background: HERO_GRADIENT,
         minHeight: 'clamp(540px, 90vh, 820px)',
         display: 'flex',
         alignItems: 'center',
@@ -155,7 +155,7 @@ export default function HomePage() {
               style={{
                 background: 'rgba(249,115,22,0.1)',
                 border: '1px solid rgba(249,115,22,0.25)',
-                color: 'rgb(249,115,22)',
+                color: BRAND_COLOR,
               }}>
               🔧 Nigeria's #1 Mechanic Directory
             </span>
@@ -167,7 +167,7 @@ export default function HomePage() {
               style={{ fontSize: 'clamp(2rem, 9vw, 5.5rem)' }}>
               Find a Trusted<br />
               <span style={{
-                background: 'linear-gradient(130deg, rgb(249,115,22) 0%, rgb(239,68,68) 100%)',
+                background: BRAND_GRADIENT,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
@@ -254,7 +254,7 @@ export default function HomePage() {
                     {stat.icon}
                   </div>
                   <div className="font-extrabold font-mono"
-                    style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', color: 'rgb(249,115,22)' }}>
+                    style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', color: BRAND_COLOR }}>
                     {'static' in stat
                       ? stat.static
                       : <Counter to={stat.value} suffix={stat.suffix} />
@@ -326,8 +326,7 @@ export default function HomePage() {
           MECHANIC CTA BANNER
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden border-y border-gray-800 py-14 sm:py-16 px-4"
-        style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(239,68,68,0.03) 100%)' }}>
-        {/* Decorative glow */}
+        style={{ background: CTA_GRADIENT }}>
         <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)' }} />
 
@@ -343,7 +342,6 @@ export default function HomePage() {
               Create your free listing and start growing your customer base.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
-              {/* ✅ Link instead of <a href> — no full page reload */}
               <Link to="/signup"  className="btn-primary text-center text-sm sm:text-base">
                 Create Free Listing
               </Link>
