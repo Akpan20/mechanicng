@@ -8,6 +8,8 @@ import { Toaster } from 'react-hot-toast'
 import { store, persistor } from '@/store'
 import App from './App'
 import './index.css'
+import 'leaflet/dist/leaflet.css'
+import '@/lib/leafletIcons'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
