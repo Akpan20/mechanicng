@@ -6,8 +6,8 @@ export async function connectDB(): Promise<void> {
 
   mongoose.set('toJSON', {
     virtuals: true,
-    transform: (_doc, ret) => {
-      ret.id = ret._id
+    transform: (_doc, ret: Record<string, any>) => {
+      ret.id         = ret._id
       ret.created_at = ret.createdAt
       ret.updated_at = ret.updatedAt
       delete ret._id
