@@ -163,7 +163,6 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-3">
                 {mechanics.map(m => {
-                  console.log('created_at raw value:', m.created_at, typeof m.created_at)
                   return (
                     <div key={m.id} className="card p-5">
                       <div className="flex gap-4 items-start flex-wrap">
@@ -220,7 +219,7 @@ export default function AdminPage() {
                       </div>
                       <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-600">
                         <span>ID: {m.id}</span>
-                        <span>Registered: {new Date(m.created_at).toLocaleDateString('en-NG')}</span>
+                        <span>Registered: {m.created_at ? new Date(m.created_at).toLocaleDateString('en-NG') : 'Unknown'}</span>
                       </div>
                     </div>
                   )
@@ -479,15 +478,13 @@ export default function AdminPage() {
             setIsSubmittingAdvertiser(true)
             try {
               await createAdvertiser({
-                  businessName: data.business_name,
-                  contactName:  data.contact_name,
-                  email:        data.email,
-                  phone:        data.phone,
-                  website:      data.website  || undefined,
-                  industry:     data.industry || undefined,
-                  createdAt:    '',
-                  updateAt:     '',
-                })
+                businessName: data.business_name,
+                contactName:  data.contact_name,
+                email:        data.email,
+                phone:        data.phone,
+                website:      data.website  || undefined,
+                industry:     data.industry || undefined,
+              })
               setShowAdvertiserForm(false)
             } finally {
               setIsSubmittingAdvertiser(false)
