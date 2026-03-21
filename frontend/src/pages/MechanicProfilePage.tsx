@@ -158,7 +158,7 @@ export default function MechanicProfilePage() {
                   <span className="text-sm text-gray-400">
                     {mechanic.rating > 0
                       // Fixed: use review_count (snake_case)
-                      ? `${mechanic.rating} · ${mechanic.review_count} review${mechanic.review_count !== 1 ? 's' : ''}`
+                      ? `${mechanic.rating} · ${mechanic.reviewCount} review${mechanic.reviewCount !== 1 ? 's' : ''}`
                       : 'No reviews yet'}
                   </span>
                 </div>
@@ -224,8 +224,8 @@ export default function MechanicProfilePage() {
           <div className="p-6 border-b border-gray-800 flex items-center justify-between">
             <div>
               <p className="section-title mb-0.5">Reviews</p>
-              {/* Fixed: use review_count (snake_case) */}
-              <p className="text-xs text-gray-500">{mechanic.review_count} review{mechanic.review_count !== 1 ? 's' : ''}</p>
+              {/* Fixed: use reviewCount (camelCase) */}
+              <p className="text-xs text-gray-500">{mechanic.reviewCount} review{mechanic.reviewCount !== 1 ? 's' : ''}</p>
             </div>
             {user && !showReviewForm && (
               <button onClick={() => setShowReviewForm(true)} className="btn-primary text-sm py-2 px-4">
