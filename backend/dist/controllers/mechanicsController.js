@@ -12,33 +12,34 @@ exports.createReview = createReview;
 const zod_1 = require("zod");
 const Mechanic_1 = require("../models/Mechanic");
 const Review_1 = require("../models/Review");
+const AuditLog_1 = require("../models/AuditLog");
 const createMechanicSchema = zod_1.z.object({
-    name: zod_1.z.string().min(2),
+    name: zod_1.z.string().min(2).max(100),
     type: zod_1.z.enum(['shop', 'mobile']),
-    phone: zod_1.z.string().min(7),
-    whatsapp: zod_1.z.string().min(7),
+    phone: zod_1.z.string().min(7).max(20),
+    whatsapp: zod_1.z.string().min(7).max(20),
     email: zod_1.z.string().email(),
-    city: zod_1.z.string().min(2),
-    area: zod_1.z.string().min(2),
-    address: zod_1.z.string().optional(),
-    lat: zod_1.z.number(),
-    lng: zod_1.z.number(),
-    serviceRadius: zod_1.z.number().optional(),
-    services: zod_1.z.array(zod_1.z.string()).min(1),
-    hours: zod_1.z.string().min(2),
+    city: zod_1.z.string().min(2).max(100),
+    area: zod_1.z.string().min(2).max(100),
+    address: zod_1.z.string().max(200).optional(),
+    lat: zod_1.z.number().min(-90).max(90),
+    lng: zod_1.z.number().min(-180).max(180),
+    serviceRadius: zod_1.z.number().min(0).max(500).optional(),
+    services: zod_1.z.array(zod_1.z.string().max(50)).min(1).max(20),
+    hours: zod_1.z.string().min(2).max(100),
     priceRange: zod_1.z.enum(['low', 'mid', 'high']),
-    bio: zod_1.z.string().optional(),
+    bio: zod_1.z.string().max(1000).optional(),
 });
 const reviewSchema = zod_1.z.object({
-    userName: zod_1.z.string().min(2),
+    userName: zod_1.z.string().min(2).max(50),
     rating: zod_1.z.number().int().min(1).max(5),
-    comment: zod_1.z.string().min(5),
+    comment: zod_1.z.string().min(5).max(1000),
 });
-// Single cast point — all callers pass toObject() or lean() results here
-function serializeMechanic(m) {
+// ─── Serializer ───────────────────────────────────────────────
+function serializeMechanic(m, showContact = false) {
     const doc = m;
     const { _id, __v, createdAt, updatedAt, reviewCount, location, ...rest } = doc;
-    return {
+    const result = {
         ...rest,
         id: _id,
         created_at: createdAt,
@@ -47,7 +48,14 @@ function serializeMechanic(m) {
         lat: location?.coordinates?.[1] ?? null,
         lng: location?.coordinates?.[0] ?? null,
     };
+    if (!showContact) {
+        delete result.phone;
+        delete result.whatsapp;
+        delete result.email;
+    }
+    return result;
 }
+// ─── Public endpoints ─────────────────────────────────────────
 async function searchMechanics(req, res) {
     try {
         const { city, service, type, priceRange, minRating, lat, lng, radius } = req.query;
@@ -66,10 +74,16 @@ async function searchMechanics(req, res) {
         if (minRating)
             filter.rating = { $gte: Number(minRating) };
         if (lat && lng) {
+            const latN = Number(lat);
+            const lngN = Number(lng);
+            if (isNaN(latN) || isNaN(lngN) || latN < -90 || latN > 90 || lngN < -180 || lngN > 180) {
+                res.status(400).json({ error: 'Invalid coordinates' });
+                return;
+            }
             filter.location = {
                 $near: {
-                    $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
-                    $maxDistance: Number(radius ?? 50000),
+                    $geometry: { type: 'Point', coordinates: [lngN, latN] },
+                    $maxDistance: Math.min(Number(radius ?? 50000), 100000), // cap at 100km
                 },
             };
         }
@@ -77,10 +91,12 @@ async function searchMechanics(req, res) {
             .sort({ plan: -1, rating: -1 })
             .limit(100)
             .lean();
-        res.json(mechanics.map(serializeMechanic));
+        const isAuth = !!req.user;
+        res.json(mechanics.map(m => serializeMechanic(m, isAuth)));
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('searchMechanics error:', err);
+        res.status(500).json({ error: 'Failed to search mechanics' });
     }
 }
 async function getMechanicById(req, res) {
@@ -90,10 +106,12 @@ async function getMechanicById(req, res) {
             res.status(404).json({ error: 'Mechanic not found' });
             return;
         }
-        res.json(serializeMechanic(m));
+        // Always show contact info on the full profile page
+        res.json(serializeMechanic(m, true));
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('getMechanicById error:', err);
+        res.status(500).json({ error: 'Failed to fetch mechanic' });
     }
 }
 async function getMechanicByUserId(req, res) {
@@ -103,10 +121,11 @@ async function getMechanicByUserId(req, res) {
             res.status(404).json({ error: 'No listing found for this user' });
             return;
         }
-        res.json(serializeMechanic(m));
+        res.json(serializeMechanic(m, true));
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('getMechanicByUserId error:', err);
+        res.status(500).json({ error: 'Failed to fetch mechanic' });
     }
 }
 async function createMechanic(req, res) {
@@ -119,6 +138,12 @@ async function createMechanic(req, res) {
         }
         const parsed = createMechanicSchema.parse(body);
         const { lat, lng, ...rest } = parsed;
+        // Prevent duplicate listings per user
+        const existing = await Mechanic_1.Mechanic.findOne({ userId: req.user.userId });
+        if (existing) {
+            res.status(409).json({ error: 'You already have a mechanic listing' });
+            return;
+        }
         const mechanic = await Mechanic_1.Mechanic.create({
             ...rest,
             userId: req.user.userId,
@@ -130,14 +155,15 @@ async function createMechanic(req, res) {
             featured: false,
             photos: [],
         });
-        res.status(201).json(serializeMechanic(mechanic.toObject()));
+        res.status(201).json(serializeMechanic(mechanic.toObject(), true));
     }
     catch (err) {
         if (err instanceof zod_1.z.ZodError) {
             res.status(400).json({ error: err.errors });
             return;
         }
-        res.status(500).json({ error: err.message });
+        console.error('createMechanic error:', err);
+        res.status(500).json({ error: 'Failed to create mechanic listing' });
     }
 }
 async function updateMechanic(req, res) {
@@ -148,7 +174,8 @@ async function updateMechanic(req, res) {
             return;
         }
         const isOwner = mechanic.userId.toString() === req.user.userId;
-        if (!isOwner && req.user.role !== 'admin') {
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }
@@ -159,29 +186,87 @@ async function updateMechanic(req, res) {
             delete body.price_range;
         }
         if (body.lat != null && body.lng != null) {
-            body.location = { type: 'Point', coordinates: [body.lng, body.lat] };
+            const lat = parseFloat(body.lat);
+            const lng = parseFloat(body.lng);
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                res.status(400).json({ error: 'Invalid coordinates' });
+                return;
+            }
+            body.location = { type: 'Point', coordinates: [lng, lat] };
             delete body.lat;
             delete body.lng;
         }
-        // Prevent overwriting protected fields
-        const protected_ = ['status', 'rating', 'reviewCount', 'verified', 'featured', 'userId'];
-        protected_.forEach(f => delete body[f]);
+        // Whitelist allowed fields first
+        const allowedFields = [
+            'name', 'type', 'phone', 'whatsapp', 'email', 'city', 'area',
+            'address', 'location', 'serviceRadius', 'services', 'hours',
+            'priceRange', 'bio', 'photos',
+        ];
+        // Admins can also update plan
+        if (isAdmin)
+            allowedFields.push('plan');
+        Object.keys(body).forEach(key => {
+            if (!allowedFields.includes(key))
+                delete body[key];
+        });
+        if (Object.keys(body).length === 0) {
+            res.status(400).json({ error: 'No valid fields to update' });
+            return;
+        }
+        // Audit log when admin edits someone else's listing
+        if (isAdmin && !isOwner) {
+            await AuditLog_1.AuditLog.create({
+                adminId: req.user.userId,
+                action: 'edit_mechanic',
+                targetId: req.params.id,
+                targetType: 'mechanic',
+                before: mechanic.toObject(),
+                after: body,
+                ip: req.ip,
+            });
+        }
         Object.assign(mechanic, body);
         await mechanic.save();
-        res.json(serializeMechanic(mechanic.toObject()));
+        res.json(serializeMechanic(mechanic.toObject(), isOwner || isAdmin));
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('updateMechanic error:', err);
+        res.status(500).json({ error: 'Failed to update mechanic' });
     }
 }
 // ─── Admin ────────────────────────────────────────────────────
-async function getAllMechanicsAdmin(_req, res) {
+async function getAllMechanicsAdmin(req, res) {
     try {
-        const mechanics = await Mechanic_1.Mechanic.find().sort({ createdAt: -1 }).lean();
-        res.json(mechanics.map(serializeMechanic));
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, parseInt(req.query.limit) || 12);
+        const status = req.query.status;
+        const city = req.query.city;
+        const filter = {};
+        if (status)
+            filter.status = status;
+        if (city)
+            filter.$or = [
+                { city: new RegExp(city, 'i') },
+                { name: new RegExp(city, 'i') },
+            ];
+        const [mechanics, total] = await Promise.all([
+            Mechanic_1.Mechanic.find(filter)
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Mechanic_1.Mechanic.countDocuments(filter),
+        ]);
+        res.json({
+            mechanics: mechanics.map(m => serializeMechanic(m, true)),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('getAllMechanicsAdmin error:', err);
+        res.status(500).json({ error: 'Failed to fetch mechanics' });
     }
 }
 async function updateMechanicStatus(req, res) {
@@ -192,33 +277,67 @@ async function updateMechanicStatus(req, res) {
             res.status(400).json({ error: `Invalid status. Must be one of: ${allowed.join(', ')}` });
             return;
         }
-        const m = await Mechanic_1.Mechanic.findByIdAndUpdate(req.params.id, { status }, { new: true });
-        if (!m) {
+        const before = await Mechanic_1.Mechanic.findById(req.params.id);
+        if (!before) {
             res.status(404).json({ error: 'Mechanic not found' });
             return;
         }
+        const m = await Mechanic_1.Mechanic.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        await AuditLog_1.AuditLog.create({
+            adminId: req.user.userId,
+            action: `${status}_mechanic`,
+            targetId: req.params.id,
+            targetType: 'mechanic',
+            before: { status: before.status },
+            after: { status },
+            ip: req.ip,
+        });
         res.json({ success: true, status: m.status });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('updateMechanicStatus error:', err);
+        res.status(500).json({ error: 'Failed to update mechanic status' });
     }
 }
 // ─── Reviews ──────────────────────────────────────────────────
 async function getReviews(req, res) {
     try {
-        const reviews = await Review_1.Review.find({ mechanicId: req.params.id })
-            .sort({ createdAt: -1 })
-            .lean();
-        res.json(reviews.map(r => ({ ...r, id: r._id })));
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(20, parseInt(req.query.limit) || 5);
+        const [reviews, total] = await Promise.all([
+            Review_1.Review.find({ mechanicId: req.params.id })
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Review_1.Review.countDocuments({ mechanicId: req.params.id }),
+        ]);
+        res.json({
+            reviews: reviews.map(r => ({ ...r, id: r._id })),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('getReviews error:', err);
+        res.status(500).json({ error: 'Failed to fetch reviews' });
     }
 }
 async function createReview(req, res) {
     try {
+        // Prevent reviewing own listing
+        const mechanic = await Mechanic_1.Mechanic.findById(req.params.id);
+        if (!mechanic) {
+            res.status(404).json({ error: 'Mechanic not found' });
+            return;
+        }
+        if (mechanic.userId.toString() === req.user.userId) {
+            res.status(403).json({ error: 'You cannot review your own listing' });
+            return;
+        }
         const body = reviewSchema.parse(req.body);
-        // Prevent duplicate reviews from same user
+        // Prevent duplicate reviews
         const existing = await Review_1.Review.findOne({ mechanicId: req.params.id, userId: req.user.userId });
         if (existing) {
             res.status(409).json({ error: 'You have already reviewed this mechanic' });
@@ -243,6 +362,7 @@ async function createReview(req, res) {
             res.status(400).json({ error: err.errors });
             return;
         }
-        res.status(500).json({ error: err.message });
+        console.error('createReview error:', err);
+        res.status(500).json({ error: 'Failed to submit review' });
     }
 }

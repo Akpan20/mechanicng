@@ -3,7 +3,7 @@ import { signOut } from '@/lib/api/auth'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { selectUser, selectProfile, selectIsAdmin, resetAuth } from '@/store/authSlice'
+import { selectUser, selectProfile, selectIsAdmin, logout } from '@/store/authSlice'
 
 interface NavLink { to: string; label: string; match?: string }
 interface BaseLayoutProps { children: React.ReactNode; navLinks: NavLink[] }
@@ -35,11 +35,16 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
   const close = () => setMobileOpen(false)
 
   const handleSignOut = async () => {
-    await signOut()
-    dispatch(resetAuth())
-    navigate('/')
-    toast.success('Signed out')
-    close()
+    try {
+      await signOut()
+    } catch {
+      // Ignore API errors — log out locally regardless
+    } finally {
+      await dispatch(logout())
+      navigate('/')
+      toast.success('Signed out')
+      close()
+    }
   }
 
   return (
@@ -217,7 +222,6 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
           <div className="pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-600">
             <p>© {new Date().getFullYear()} MechanicNG. Built for Nigerian roads.</p>
 
-            {/* Dev credit */}
             <div className="footer-dev-bar">
               <div className="footer-dev-rule" />
               <div className="footer-dev-text">

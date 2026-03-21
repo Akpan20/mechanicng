@@ -5,6 +5,7 @@ const zod_1 = require("zod");
 const User_1 = require("../models/User");
 const jwt_1 = require("../lib/jwt");
 const auth_1 = require("../middleware/auth");
+const authController_1 = require("../controllers/authController");
 const router = (0, express_1.Router)();
 const signupSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
@@ -197,4 +198,6 @@ router.patch("/me", auth_1.authenticate, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+router.post('/forgot-password', authController_1.forgotPassword);
+router.post('/reset-password', authController_1.resetPassword);
 exports.default = router;

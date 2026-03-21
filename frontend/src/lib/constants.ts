@@ -93,3 +93,9 @@ export const STATUS_COLORS: Record<AdStatus, string> = {
   approved: 'bg-emerald-500/20 text-emerald-400',
   ended:    'bg-gray-700 text-gray-400',
 }
+
+export const CONSENT_KEY = 'mechanicng_cookie_consent'
+export type ConsentState = 'accepted' | 'declined' | null
+export function getConsent(): ConsentState {
+  return localStorage.getItem(CONSENT_KEY) as ConsentState
+}

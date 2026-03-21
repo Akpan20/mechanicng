@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { signOut } from '@/lib/api/auth'
 import toast from 'react-hot-toast'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { selectProfile, resetAuth } from '@/store/authSlice'
+import { selectProfile, logout } from '@/store/authSlice'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch()
@@ -10,10 +10,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
-    await signOut()
-    dispatch(resetAuth())
-    navigate('/')
-    toast.success('Signed out')
+    try {
+      await signOut()
+    } finally {
+      await dispatch(logout())
+      navigate('/')
+      toast.success('Signed out')
+    }
   }
 
   return (

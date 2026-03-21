@@ -1,3 +1,5 @@
+import { Schema, model } from 'mongoose'
+
 const auditSchema = new Schema({
   adminId:    { type: Schema.Types.ObjectId, ref: 'User', required: true },
   action:     { type: String, required: true },

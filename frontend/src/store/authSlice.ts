@@ -1,23 +1,29 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { Profile } from '@/types'
 
-// Simple user shape — no Supabase dependency
 export interface AuthUser {
   id: string
   email: string
 }
 
 interface AuthState {
-  user: AuthUser | null
-  profile: Profile | null
+  user:      AuthUser | null
+  profile:   Profile | null
   isLoading: boolean
 }
 
 const initialState: AuthState = {
-  user: null,
-  profile: null,
+  user:      null,
+  profile:   null,
   isLoading: true,
 }
+
+// ─── Async logout ─────────────────────────────────────────────
+// Thunk so components can await it and redirect after completion
+export const logout = createAsyncThunk('auth/logout', async () => {
+  localStorage.removeItem('token')
+  sessionStorage.clear()
+})
 
 const authSlice = createSlice({
   name: 'auth',
@@ -37,7 +43,15 @@ const authSlice = createSlice({
       state.profile   = null
       state.isLoading = false
       localStorage.removeItem('token')
+      sessionStorage.clear()
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout.fulfilled, (state) => {
+      state.user      = null
+      state.profile   = null
+      state.isLoading = false
+    })
   },
 })
 
