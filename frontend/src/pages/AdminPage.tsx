@@ -484,6 +484,8 @@ export default function AdminPage() {
                 phone:        data.phone,
                 website:      data.website  || undefined,
                 industry:     data.industry || undefined,
+                createdAt:    '',
+                updateAt:     '',
               })
               setShowAdvertiserForm(false)
             } finally {

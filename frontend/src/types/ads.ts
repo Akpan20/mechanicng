@@ -36,6 +36,8 @@ export interface Advertiser {
   website?: string
   industry?: string
   notes?: string
+  createdAt: string
+  updateAt: string
 }
 
 export interface AdCampaign {
