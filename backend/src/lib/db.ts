@@ -10,10 +10,12 @@ export async function connectDB(): Promise<void> {
       ret.id         = ret._id
       ret.created_at = ret.createdAt
       ret.updated_at = ret.updatedAt
+      ret.review_count = ret.reviewCount
       delete ret._id
       delete ret.__v
       delete ret.createdAt
       delete ret.updatedAt
+      delete ret.reviewCount
       return ret
     }
   })
