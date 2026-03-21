@@ -1,14 +1,17 @@
-// ─────────────────────────────────────────────────────────────
-// API client — all requests go through here
-// Reads JWT from localStorage, attaches as Bearer token
-// ─────────────────────────────────────────────────────────────
+/* eslint-disable no-undef */ // RequestInit and other globals are TypeScript types
+
+import { store } from '../../store'
+import { logout } from '../store/authSlice'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  public status: number
+
+  constructor(status: number, message: string) {
     super(message)
     this.name = 'ApiError'
+    this.status = status
   }
 }
 
@@ -21,6 +24,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+
+  // Handle 401 Unauthorized – token expired or invalid
+  if (res.status === 401) {
+    store.dispatch(logout())
+    window.location.href = '/login'
+    throw new ApiError(401, 'Unauthorized')
+  }
+
   const data = await res.json().catch(() => ({}))
 
   if (!res.ok) throw new ApiError(res.status, data.error ?? `HTTP ${res.status}`)

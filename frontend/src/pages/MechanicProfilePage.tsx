@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import AdSlot from '@/components/ads/AdSlot'
+import DOMPurify from 'dompurify'
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -85,7 +86,6 @@ export default function MechanicProfilePage() {
   if (!mechanic) return <div className="text-center py-20 text-gray-500">Mechanic not found.</div>
 
   const waNum = (mechanic.whatsapp || mechanic.phone || '').replace(/\D/g, '')
-  // Fixed: mechanic uses lat/lng directly, not location.coordinates
   const lat = mechanic.lat
   const lng = mechanic.lng
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
@@ -157,7 +157,6 @@ export default function MechanicProfilePage() {
                   </div>
                   <span className="text-sm text-gray-400">
                     {mechanic.rating > 0
-                      // Fixed: use review_count (snake_case)
                       ? `${mechanic.rating} · ${mechanic.reviewCount} review${mechanic.reviewCount !== 1 ? 's' : ''}`
                       : 'No reviews yet'}
                   </span>
@@ -190,7 +189,6 @@ export default function MechanicProfilePage() {
           <div className="p-6 grid grid-cols-2 gap-4 border-b border-gray-800">
             {([
               ['🕐 Hours',  mechanic.hours],
-              // Fixed: use service_radius (snake_case) and lat/lng directly
               ['📍 Type',   mechanic.type === 'mobile' ? `Mobile${mechanic.service_radius ? ` · ${mechanic.service_radius}km radius` : ''}` : 'Auto Shop'],
               ['💰 Pricing', PRICE_LABELS[mechanic.priceRange]],
               ['📞 Phone',  mechanic.phone],
@@ -205,7 +203,8 @@ export default function MechanicProfilePage() {
           {mechanic.bio && (
             <div className="p-6 border-b border-gray-800">
               <p className="section-title mb-3">About</p>
-              <p className="text-gray-300 leading-relaxed">{mechanic.bio}</p>
+              {/* Sanitized bio */}
+              <p className="text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(mechanic.bio) }} />
             </div>
           )}
 
@@ -224,7 +223,6 @@ export default function MechanicProfilePage() {
           <div className="p-6 border-b border-gray-800 flex items-center justify-between">
             <div>
               <p className="section-title mb-0.5">Reviews</p>
-              {/* Fixed: use reviewCount (camelCase) */}
               <p className="text-xs text-gray-500">{mechanic.reviewCount} review{mechanic.reviewCount !== 1 ? 's' : ''}</p>
             </div>
             {user && !showReviewForm && (
@@ -292,7 +290,6 @@ export default function MechanicProfilePage() {
                       <span className="text-xs text-gray-600">
                         {new Date(r.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </span>
-                      {/* Delete — own review or admin */}
                       {(user?.id === r.userId || profile?.role === 'admin') && (
                         <button onClick={() => handleDeleteReview(r.id)}
                           disabled={deleteReview.isPending}
@@ -302,7 +299,8 @@ export default function MechanicProfilePage() {
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-300 text-sm leading-relaxed">{r.comment}</p>
+                  {/* Sanitized review comment */}
+                  <p className="text-gray-300 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(r.comment) }} />
                 </div>
               ))}
             </div>
@@ -356,7 +354,6 @@ export default function MechanicProfilePage() {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowQuote(false)} className="btn-outline flex-1">Cancel</button>
-                  {/* Fixed: use isLoading instead of isPending */}
                   <button type="submit" disabled={submitQuote.isLoading} className="btn-primary flex-1">
                     {submitQuote.isLoading ? 'Sending...' : 'Send Request'}
                   </button>

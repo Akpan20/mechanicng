@@ -37,7 +37,7 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-lg font-bold text-white mb-2">7. Contact</h2>
-          <p>For questions about these terms, contact us at <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.com</a>.</p>
+          <p>For questions about these terms, contact us at <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.onrender.com</a>.</p>
         </section>
       </div>
     </div>

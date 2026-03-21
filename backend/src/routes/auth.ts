@@ -3,6 +3,7 @@ import { z } from "zod";
 import { User } from "../models/User";
 import { signToken } from "../lib/jwt";
 import { authenticate, AuthRequest } from "../middleware/auth";
+import { forgotPassword, resetPassword } from '../controllers/authController'
 
 const router = Router();
 
@@ -216,5 +217,8 @@ router.patch(
     }
   },
 );
+
+router.post('/forgot-password', forgotPassword)
+router.post('/reset-password',  resetPassword)
 
 export default router;

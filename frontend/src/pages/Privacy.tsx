@@ -32,7 +32,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-lg font-bold text-white mb-2">6. Your Rights</h2>
-          <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us at <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.com</a>.</p>
+          <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us at <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.onrender.com</a>.</p>
         </section>
 
         <section>

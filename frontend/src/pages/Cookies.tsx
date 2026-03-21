@@ -35,7 +35,7 @@ export default function CookiesPage() {
 
         <section>
           <h2 className="text-lg font-bold text-white mb-2">Contact</h2>
-          <p>Questions about our cookie use? Email <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.com</a>.</p>
+          <p>Questions about our cookie use? Email <a href="mailto:hello@mechanicng.com" className="text-brand-500 hover:underline">hello@mechanicng.onrender.com</a>.</p>
         </section>
       </div>
     </div>
