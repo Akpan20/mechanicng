@@ -14,7 +14,12 @@ function toRad(deg: number): number { return (deg * Math.PI) / 180 }
 
 export function attachDistances(mechanics: Mechanic[], userLoc: Coordinates): Mechanic[] {
   return mechanics
-    .map(m => ({ ...m, distance: haversineDistance(userLoc, { lat: m.lat, lng: m.lng }) }))
+    .map(m => ({
+      ...m,
+      distance: (m.lat != null && m.lng != null)
+        ? haversineDistance(userLoc, { lat: m.lat, lng: m.lng })
+        : undefined
+    }))
     .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999))
 }
 
