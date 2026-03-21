@@ -20,6 +20,8 @@ const ads_1 = __importDefault(require("./routes/ads"));
 const reviews_1 = __importDefault(require("./routes/reviews"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
+// ─── Trust proxy (required on Render / behind load balancer) ──
+app.set('trust proxy', 1);
 // ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173';
 console.log(`CORS allowing origin: ${allowedOrigin}`);
@@ -29,7 +31,6 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 };
-// ✅ Handle preflight BEFORE helmet and everything else
 app.options('*', (0, cors_1.default)(corsOptions));
 app.use((0, cors_1.default)(corsOptions));
 // ─── Security & logging ───────────────────────────────────────

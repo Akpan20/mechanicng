@@ -19,6 +19,9 @@ import reviewsRouter        from './routes/reviews'
 const app  = express()
 const PORT = process.env.PORT ?? 4000
 
+// ─── Trust proxy (required on Render / behind load balancer) ──
+app.set('trust proxy', 1)
+
 // ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173'
 console.log(`CORS allowing origin: ${allowedOrigin}`)
@@ -30,7 +33,6 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 }
 
-// ✅ Handle preflight BEFORE helmet and everything else
 app.options('*', cors(corsOptions))
 app.use(cors(corsOptions))
 
