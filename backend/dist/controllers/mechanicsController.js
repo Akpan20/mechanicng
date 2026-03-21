@@ -37,7 +37,16 @@ const reviewSchema = zod_1.z.object({
 // Single cast point — all callers pass toObject() or lean() results here
 function serializeMechanic(m) {
     const doc = m;
-    return { ...doc, id: doc._id };
+    const { _id, __v, createdAt, updatedAt, reviewCount, location, ...rest } = doc;
+    return {
+        ...rest,
+        id: _id,
+        created_at: createdAt,
+        updated_at: updatedAt,
+        review_count: reviewCount,
+        lat: location?.coordinates?.[1] ?? null,
+        lng: location?.coordinates?.[0] ?? null,
+    };
 }
 async function searchMechanics(req, res) {
     try {
