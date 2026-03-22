@@ -117,7 +117,7 @@ export default function MechanicProfilePage() {
   const mapsUrl     = hasLocation
     ? `https://www.google.com/maps/search/?api=1&query=${mechanic.lat},${mechanic.lng}`
     : null
-  const reviewCount = mechanic.review_count ?? 0
+  const reviewCount = mechanic.reviewCount ?? 0
   const reviews     = reviewsData?.reviews    ?? []
   const totalPages  = reviewsData?.totalPages ?? 1
 
