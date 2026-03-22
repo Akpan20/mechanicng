@@ -9,16 +9,18 @@ import {
   updateMechanicStatus,
   getReviews,
   createReview,
+  getMyMechanic,        // ← add this
 } from '../controllers/mechanicsController'
 
 const router = Router()
 
 // Public
-router.get('/',           searchMechanics)
-router.get('/:id',        getMechanicById)
-router.get('/:id/reviews', getReviews)
+router.get('/',             searchMechanics)
+router.get('/:id/reviews',  getReviews)
+router.get('/:id',          getMechanicById)
 
-// Authenticated
+// Authenticated — named routes BEFORE /:id
+router.get('/me',           authenticate, getMyMechanic)        // ← add this
 router.get('/user/:userId', authenticate, getMechanicByUserId)
 router.post('/',            authenticate, createMechanic)
 router.post('/:id/reviews', authenticate, createReview)

@@ -1,6 +1,7 @@
 // backend/src/controllers/mechanicsController.ts (updated)
 
 import { Request, Response } from 'express'
+import mongoose from 'mongoose'
 import { z } from 'zod'
 import { Mechanic } from '../models/Mechanic'
 import { Review } from '../models/Review'
@@ -109,6 +110,19 @@ export async function searchMechanics(req: Request, res: Response): Promise<void
   } catch (err) {
     console.error('searchMechanics error:', err)
     res.status(500).json({ error: 'Failed to search mechanics' })
+  }
+}
+
+export async function getMyMechanic(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const m = await Mechanic.findOne({
+      userId: new mongoose.Types.ObjectId(req.user!.userId)
+    }).lean()
+    if (!m) { res.status(404).json({ error: 'No listing found' }); return }
+    res.json(serializeMechanic(m, true))
+  } catch (err) {
+    console.error('getMyMechanic error:', err)
+    res.status(500).json({ error: 'Failed to fetch mechanic' })
   }
 }
 
