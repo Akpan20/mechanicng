@@ -380,26 +380,92 @@ export default function SignupPage() {
             )}
 
             {/* Location map picker */}
-            <div>
-              <label className="section-title block mb-1">Pin Your Location on the Map</label>
+            <div className="space-y-2">
+              <label className="section-title block mb-1">
+                Pin Your Location on the Map
+                {listingForm.formState.errors.lat && (
+                  <span className="text-red-500 text-xs ml-2">
+                    • {listingForm.formState.errors.lat.message}
+                  </span>
+                )}
+              </label>
+              
               <p className="text-xs text-gray-500 mb-3">
                 Click on the map to set your exact location. This helps customers get directions to you.
               </p>
-              <MapPicker
-                lat={currentLat ?? null}
-                lng={currentLng ?? null}
-                onChange={(lat, lng) => {
-                  listingForm.setValue('lat', lat)
-                  listingForm.setValue('lng', lng)
+              
+              {/* Map container with border + focus ring for accessibility */}
+              <div className={`rounded-lg overflow-hidden border ${
+                listingForm.formState.errors.lat ? 'border-red-300' : 'border-gray-200'
+              }`}>
+                <MapPicker
+                  key={`${currentLat}-${currentLng}`}
+                  lat={currentLat ?? null}
+                  lng={currentLng ?? null}
+                  onChange={(lat, lng) => {
+                    listingForm.setValue('lat', lat, { shouldValidate: true, shouldDirty: true })
+                    listingForm.setValue('lng', lng, { shouldValidate: true, shouldDirty: true })
+                  }}
+                />
+              </div>
+
+              {/* Add above or below the map */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!navigator.geolocation) {
+                    listingForm.setError('lat', { 
+                      type: 'manual', 
+                      message: 'Geolocation is not supported by your browser' 
+                    })
+                    return
+                  }
+                  
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      listingForm.setValue('lat', pos.coords.latitude, { shouldValidate: true })
+                      listingForm.setValue('lng', pos.coords.longitude, { shouldValidate: true })
+                    },
+                    (err) => {
+                      listingForm.setError('lat', { 
+                        type: 'manual', 
+                        message: err.message || 'Unable to get your location' 
+                      })
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                  )
                 }}
-              />
-              {/* Optional: display current coordinates */}
-              {currentLat && currentLng && (
-                <p className="text-xs text-gray-500 mt-2">
-                  📍 Selected: {currentLat.toFixed(6)}, {currentLng.toFixed(6)}
-                </p>
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              >
+                📍 Use my current location
+              </button>
+              
+              {/* Coordinate display + actions */}
+              {(currentLat && currentLng) && (
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
+                  <span>
+                    📍 Selected: <code className="bg-gray-100 px-1 rounded">
+                      {currentLat.toFixed(6)}, {currentLng.toFixed(6)}
+                    </code>
+                  </span>
+                  
+                  {/* Optional: Clear button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      listingForm.setValue('lat', null, { shouldValidate: true })
+                      listingForm.setValue('lng', null, { shouldValidate: true })
+                    }}
+                    className="text-red-500 hover:text-red-700 underline"
+                  >
+                    Clear
+                  </button>
+                </div>
               )}
-              {/* Hidden fields for lat/lng (already set via setValue) */}
+              
+              {/* Hidden fields for form submission (redundant if using watch, but safe) */}
+              <input type="hidden" {...listingForm.register('lat')} />
+              <input type="hidden" {...listingForm.register('lng')} />
             </div>
 
             {/* Services */}
