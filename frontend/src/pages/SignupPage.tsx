@@ -10,6 +10,7 @@ import { createMechanic } from '@/lib/api/mechanics'
 import { setUser, setProfile } from '@/store/authSlice'
 import type { AppDispatch } from '@/store'
 import { SERVICES, NIGERIAN_CITIES } from '@/lib/constants'
+import MapPicker from '@/components/mechanic/MapPicker' // <-- new import
 
 const accountSchema = z.object({
   full_name:        z.string().min(2, 'Full name required'),
@@ -59,6 +60,11 @@ export default function SignupPage() {
     resolver: zodResolver(listingSchema),
     defaultValues: { type: 'shop', price_range: 'mid', services: [] },
   })
+
+  // Watch the type to conditionally show radius / address
+  const mechanicType = listingForm.watch('type')
+  const currentLat = listingForm.watch('lat')
+  const currentLng = listingForm.watch('lng')
 
   const toggleService = (s: string) => {
     const next = selectedServices.includes(s)
@@ -350,7 +356,7 @@ export default function SignupPage() {
             </div>
 
             {/* Address (shop only) */}
-            {listingForm.watch('type') === 'shop' && (
+            {mechanicType === 'shop' && (
               <div>
                 <label className="section-title block mb-2">Shop Address</label>
                 <input className="input" placeholder="Full address of your shop"
@@ -359,7 +365,7 @@ export default function SignupPage() {
             )}
 
             {/* Service radius (mobile only) */}
-            {listingForm.watch('type') === 'mobile' && (
+            {mechanicType === 'mobile' && (
               <div>
                 <label className="section-title block mb-2">
                   Service Radius: {listingForm.watch('service_radius') ?? 15}km
@@ -373,44 +379,27 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* Location coordinates */}
+            {/* Location map picker */}
             <div>
-              <label className="section-title block mb-1">Location Coordinates (optional but recommended)</label>
+              <label className="section-title block mb-1">Pin Your Location on the Map</label>
               <p className="text-xs text-gray-500 mb-3">
-                Allows customers to get directions to your business.{' '}
-                <a href="https://www.latlong.net/" target="_blank" rel="noreferrer"
-                  className="text-brand-500 hover:underline">
-                  Find your coordinates →
-                </a>
+                Click on the map to set your exact location. This helps customers get directions to you.
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="section-title block mb-1">Latitude</label>
-                  <input
-                    className="input text-sm"
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 6.5244"
-                    {...listingForm.register('lat', { valueAsNumber: true })}
-                  />
-                  {listingForm.formState.errors.lat && (
-                    <p className="text-red-400 text-xs mt-1">{listingForm.formState.errors.lat.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="section-title block mb-1">Longitude</label>
-                  <input
-                    className="input text-sm"
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 3.3792"
-                    {...listingForm.register('lng', { valueAsNumber: true })}
-                  />
-                  {listingForm.formState.errors.lng && (
-                    <p className="text-red-400 text-xs mt-1">{listingForm.formState.errors.lng.message}</p>
-                  )}
-                </div>
-              </div>
+              <MapPicker
+                lat={currentLat ?? null}
+                lng={currentLng ?? null}
+                onChange={(lat, lng) => {
+                  listingForm.setValue('lat', lat)
+                  listingForm.setValue('lng', lng)
+                }}
+              />
+              {/* Optional: display current coordinates */}
+              {currentLat && currentLng && (
+                <p className="text-xs text-gray-500 mt-2">
+                  📍 Selected: {currentLat.toFixed(6)}, {currentLng.toFixed(6)}
+                </p>
+              )}
+              {/* Hidden fields for lat/lng (already set via setValue) */}
             </div>
 
             {/* Services */}

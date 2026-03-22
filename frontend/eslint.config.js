@@ -10,15 +10,16 @@ import tsParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
 
-  // React + Hooks + Refresh
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
+
     plugins: {
       react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       '@typescript-eslint': tsEslint,
     },
+
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -33,23 +34,45 @@ export default [
         ReactDOM: 'readonly',
       },
     },
+
     settings: {
       react: { version: 'detect' },
     },
+
     rules: {
+      // ✅ React Hooks & Refresh
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
-      'react/prop-types': 'off', // turn on if using PropTypes
-      // Add your own rules here
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+
+      // ✅ PropTypes (optional)
+      'react/prop-types': 'off',
+
+      // ✅ Disable base ESLint no-unused-vars to avoid conflicts with TS version
+      'no-unused-vars': 'off',
+
+      // ✅ TypeScript-aware unused vars rule with underscore prefix support
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',      // Ignore unused params like _lat, _lng
+          varsIgnorePattern: '^_',      // Ignore unused variables like _unused
+          caughtErrorsIgnorePattern: '^_', // Ignore unused catch params
+          ignoreRestSiblings: true,     // Allow { used, ...rest } patterns
+        },
+      ],
+
+      // ➕ Add your custom rules below
+      // '@typescript-eslint/explicit-function-return-type': 'warn',
     },
+
     ignores: [
       'supabase/functions/**',
       'dist/**',
       'node_modules/**',
+      '*.config.js', // optional: ignore config files if desired
     ],
   },
 ];

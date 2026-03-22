@@ -6,6 +6,7 @@ import { useQuotes, useUpdateQuoteStatus } from '@/hooks/useQuotes'
 import { useNavigate } from 'react-router-dom'
 import { PLAN_COLORS, PLANS, SERVICES, PRICE_LABELS } from '@/lib/constants'
 import { initializePayment, generateReference } from '@/lib/paystack'
+import type { Mechanic } from '@/types'
 import toast from 'react-hot-toast'
 
 export default function DashboardPage() {
@@ -18,7 +19,7 @@ export default function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'listing' | 'quotes' | 'subscription'>('overview')
   const [editMode, setEditMode]   = useState(false)
-  const [editForm, setEditForm]   = useState<Record<string, unknown>>({})
+  const [editForm, setEditForm]   = useState<Partial<Mechanic>>({})
 
   if (isLoading) return (
     <div className="flex justify-center items-center h-64"><div className="loader" /></div>
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const planColor     = PLAN_COLORS[mechanic.plan]
   const currentPlan   = PLANS.find(p => p.id === mechanic.plan)!
   const pendingQuotes = quotes.filter(q => q.status === 'pending')
+  const hasLocation   = mechanic.lat != null && mechanic.lng != null
 
   const handleUpgrade = async (planId: string) => {
     const plan = PLANS.find(p => p.id === planId)!
@@ -59,6 +61,11 @@ export default function DashboardPage() {
     }
   }
 
+  const handleCancel = () => {
+    setEditMode(false)
+    setEditForm({})
+  }
+
   const handleSave = () => {
     if (Object.keys(editForm).length === 0) {
       setEditMode(false)
@@ -67,18 +74,23 @@ export default function DashboardPage() {
     updateMechanic.mutate(
       { id: mechanic.id, data: editForm },
       {
-        onSuccess: () => { toast.success('Listing updated!'); setEditMode(false); setEditForm({}) },
-        onError:   () => toast.error('Failed to save changes'),
+        onSuccess: () => {
+          toast.success('Listing updated!')
+          setEditMode(false)
+          setEditForm({})
+        },
+        onError: () => toast.error('Failed to save changes'),
       }
     )
   }
 
-  const set = (key: string, value: unknown) =>
-    setEditForm(prev => ({ ...prev, [key]: value }))
+  // No generic arrow — fixes TSX parsing error
+  const set = (key: keyof Mechanic, value: unknown) =>
+    setEditForm(prev => ({ ...prev, [key]: value as never }))
 
   const TABS = [
-    { id: 'overview',     label: '📊 Overview'  },
-    { id: 'listing',      label: '📝 My Listing' },
+    { id: 'overview',     label: '📊 Overview'   },
+    { id: 'listing',      label: '📝 My Listing'  },
     { id: 'quotes',       label: `💬 Quotes${pendingQuotes.length > 0 ? ` (${pendingQuotes.length})` : ''}` },
     { id: 'subscription', label: '💳 Subscription' },
   ]
@@ -109,7 +121,7 @@ export default function DashboardPage() {
                   mechanic.status === 'approved' ? 'text-emerald-400' :
                   mechanic.status === 'pending'  ? 'text-amber-400'   : 'text-red-400'
                 }`}>
-                  {mechanic.status === 'approved' ? '🟢 Live' :
+                  {mechanic.status === 'approved' ? '🟢 Live'         :
                    mechanic.status === 'pending'  ? '⏳ Under Review' :
                    '🔴 ' + mechanic.status}
                 </span>
@@ -135,15 +147,15 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ── Overview ── */}
+        {/* ══ OVERVIEW ══ */}
         {activeTab === 'overview' && (
           <div className="space-y-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {([
-                ['👁️', '—',                                                   'Profile Views',  '#f97316'],
-                ['⭐', mechanic.rating > 0 ? mechanic.rating.toString() : '—', 'Rating',         '#f59e0b'],
-                ['💬', quotes.length.toString(),                               'Total Quotes',   '#a855f7'],
-                ['📋', pendingQuotes.length.toString(),                        'Pending Quotes', '#10b981'],
+                ['👁️', '—',                                                    'Profile Views',  '#f97316'],
+                ['⭐', mechanic.rating > 0 ? mechanic.rating.toString() : '—',  'Rating',         '#f59e0b'],
+                ['💬', quotes.length.toString(),                                'Total Quotes',   '#a855f7'],
+                ['📋', pendingQuotes.length.toString(),                         'Pending Quotes', '#10b981'],
               ] as const).map(([icon, val, label, color]) => (
                 <div key={label} className="card p-5 text-center">
                   <div className="text-3xl mb-1">{icon}</div>
@@ -154,15 +166,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Location warning */}
-            {(mechanic.lat == null || mechanic.lng == null) && (
+            {!hasLocation && (
               <div className="card p-5 border-amber-500/30 bg-amber-500/5">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">📍</span>
                   <div>
                     <h3 className="font-bold text-amber-400 mb-1">Location Not Set</h3>
                     <p className="text-sm text-gray-400 mb-2">
-                      Your listing has no coordinates. Customers can't get directions and your shop
-                      won't appear in distance-based searches.
+                      Your listing has no coordinates. Customers can't get directions and your
+                      shop won't appear in distance-based searches.
                     </p>
                     <button
                       onClick={() => { setActiveTab('listing'); setEditMode(true) }}
@@ -191,12 +203,14 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Listing ── */}
+        {/* ══ LISTING ══ */}
         {activeTab === 'listing' && (
           <div className="card p-7 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">Your Listing Details</h2>
-              <button onClick={() => { setEditMode(!editMode); setEditForm({}) }} className="btn-outline text-sm py-2">
+              <button
+                onClick={() => editMode ? handleCancel() : setEditMode(true)}
+                className="btn-outline text-sm py-2">
                 {editMode ? '✕ Cancel' : '✏️ Edit'}
               </button>
             </div>
@@ -206,18 +220,18 @@ export default function DashboardPage() {
               <p className="section-title mb-3">Basic Information</p>
               <div className="grid grid-cols-2 gap-4">
                 {([
-                  ['Business Name', mechanic.name,        'name'    ],
-                  ['Phone',         mechanic.phone,       'phone'   ],
-                  ['WhatsApp',      mechanic.whatsapp,    'whatsapp'],
-                  ['City',          mechanic.city,        'city'    ],
-                  ['Area / Zone',   mechanic.area ?? '',  'area'    ],
-                  ['Business Hours',mechanic.hours,       'hours'   ],
+                  ['Business Name',  mechanic.name,       'name'    ],
+                  ['Phone',          mechanic.phone,      'phone'   ],
+                  ['WhatsApp',       mechanic.whatsapp,   'whatsapp'],
+                  ['City',           mechanic.city,       'city'    ],
+                  ['Area / Zone',    mechanic.area ?? '', 'area'    ],
+                  ['Business Hours', mechanic.hours,      'hours'   ],
                 ] as const).map(([label, val, key]) => (
                   <div key={key}>
                     <p className="section-title mb-1">{label}</p>
                     {editMode
                       ? <input className="input text-sm" defaultValue={val}
-                          onChange={e => set(key, e.target.value)} />
+                          onChange={e => set(key as keyof Mechanic, e.target.value)} />
                       : <p className="text-gray-200 text-sm font-semibold">{val || '—'}</p>
                     }
                   </div>
@@ -241,16 +255,12 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Location — the key new section */}
+            {/* Location */}
             <div>
               <p className="section-title mb-1">Location Coordinates</p>
               <p className="text-xs text-gray-500 mb-3">
-                Required for Directions button and distance-based search.
-                {' '}
-                <a
-                  href="https://www.latlong.net/"
-                  target="_blank"
-                  rel="noreferrer"
+                Required for Directions button and distance-based search.{' '}
+                <a href="https://www.latlong.net/" target="_blank" rel="noreferrer"
                   className="text-brand-500 hover:underline">
                   Find your coordinates →
                 </a>
@@ -265,7 +275,10 @@ export default function DashboardPage() {
                       step="any"
                       placeholder="e.g. 6.5244"
                       defaultValue={mechanic.lat ?? ''}
-                      onChange={e => set('lat', parseFloat(e.target.value))}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val)) set('lat', val)
+                      }}
                     />
                   </div>
                   <div>
@@ -276,13 +289,16 @@ export default function DashboardPage() {
                       step="any"
                       placeholder="e.g. 3.3792"
                       defaultValue={mechanic.lng ?? ''}
-                      onChange={e => set('lng', parseFloat(e.target.value))}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val)) set('lng', val)
+                      }}
                     />
                   </div>
                 </div>
               ) : (
                 <p className="text-gray-200 text-sm font-semibold">
-                  {mechanic.lat != null && mechanic.lng != null
+                  {hasLocation
                     ? `${mechanic.lat}, ${mechanic.lng}`
                     : <span className="text-amber-400">⚠ Not set — customers can't get directions</span>
                   }
@@ -302,7 +318,9 @@ export default function DashboardPage() {
                   onChange={e => set('bio', e.target.value)}
                 />
               ) : (
-                <p className="text-gray-200 text-sm">{mechanic.bio || <span className="text-gray-500">No bio added yet.</span>}</p>
+                <p className="text-gray-200 text-sm">
+                  {mechanic.bio || <span className="text-gray-500">No bio added yet.</span>}
+                </p>
               )}
             </div>
 
@@ -312,16 +330,17 @@ export default function DashboardPage() {
               {editMode ? (
                 <div className="flex flex-wrap gap-2">
                   {SERVICES.map(s => {
-                    const selected = (editForm.services as string[] | undefined ?? mechanic.services).includes(s)
+                    const current  = (editForm.services as string[] | undefined) ?? mechanic.services
+                    const selected = current.includes(s)
                     return (
                       <button
                         key={s}
                         type="button"
                         onClick={() => {
-                          const current = (editForm.services as string[] | undefined) ?? [...mechanic.services]
-                          const updated = current.includes(s)
-                            ? current.filter(x => x !== s)
-                            : [...current, s]
+                          const base    = (editForm.services as string[] | undefined) ?? [...mechanic.services]
+                          const updated = base.includes(s)
+                            ? base.filter(x => x !== s)
+                            : [...base, s]
                           set('services', updated)
                         }}
                         className={`tag text-sm py-1.5 px-3 transition-all border ${
@@ -352,7 +371,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Quotes ── */}
+        {/* ══ QUOTES ══ */}
         {activeTab === 'quotes' && (
           <div>
             {quotes.length === 0 ? (
@@ -369,7 +388,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-bold">{q.customer_name}</h3>
                           <span className={`badge text-xs ${
-                            q.status === 'pending'   ? 'bg-amber-500/20  text-amber-400'   :
+                            q.status === 'pending'   ? 'bg-amber-500/20  text-amber-400'    :
                             q.status === 'responded' ? 'bg-emerald-500/20 text-emerald-400' :
                                                        'bg-gray-700 text-gray-400'
                           }`}>
@@ -377,9 +396,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <p className="text-sm text-gray-400">📞 {q.customer_phone} · 🔧 {q.service}</p>
-                        {q.note && (
-                          <p className="text-sm text-gray-500 mt-1 italic">"{q.note}"</p>
-                        )}
+                        {q.note && <p className="text-sm text-gray-500 mt-1 italic">"{q.note}"</p>}
                         <p className="text-xs text-gray-600 mt-1">
                           {q.created_at
                             ? new Date(q.created_at).toLocaleDateString('en-NG', {
@@ -394,7 +411,8 @@ export default function DashboardPage() {
                           <a href={`tel:${q.customer_phone}`} className="btn-primary text-sm py-2 px-3">
                             📞 Call
                           </a>
-                          <a href={`https://wa.me/${q.customer_phone.replace(/\D/g, '')}`}
+                          <a
+                            href={`https://wa.me/${q.customer_phone.replace(/\D/g, '')}`}
                             target="_blank" rel="noreferrer"
                             className="py-2 px-3 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
                             💬 WhatsApp
@@ -414,7 +432,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Subscription ── */}
+        {/* ══ SUBSCRIPTION ══ */}
         {activeTab === 'subscription' && (
           <div className="space-y-5">
             <div className="card p-7 text-center" style={{ borderColor: planColor + '40' }}>
@@ -430,7 +448,9 @@ export default function DashboardPage() {
                   : `₦${currentPlan.priceNGN.toLocaleString()}/month`}
               </p>
               {mechanic.plan !== 'free' && (
-                <p className="text-sm text-gray-500">Manage or cancel via your Paystack subscription portal.</p>
+                <p className="text-sm text-gray-500">
+                  Manage or cancel via your Paystack subscription portal.
+                </p>
               )}
             </div>
 
@@ -465,6 +485,7 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+
       </div>
     </>
   )

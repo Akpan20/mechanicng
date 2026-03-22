@@ -1,10 +1,14 @@
+// backend/src/controllers/mechanicsController.ts (updated)
+
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { Mechanic } from '../models/Mechanic'
 import { Review } from '../models/Review'
 import { AuditLog } from '../models/AuditLog'
 import { AuthRequest } from '../middleware/auth'
+import { geocodeAddress, geocodeCity } from '../lib/geo'   // <-- added
 
+// Schema with optional lat/lng
 const createMechanicSchema = z.object({
   name:          z.string().min(2).max(100),
   type:          z.enum(['shop', 'mobile']),
@@ -14,8 +18,8 @@ const createMechanicSchema = z.object({
   city:          z.string().min(2).max(100),
   area:          z.string().min(2).max(100),
   address:       z.string().max(200).optional(),
-  lat:           z.number().min(-90).max(90),
-  lng:           z.number().min(-180).max(180),
+  lat:           z.number().min(-90).max(90).optional(),   // <-- optional
+  lng:           z.number().min(-180).max(180).optional(), // <-- optional
   serviceRadius: z.number().min(0).max(500).optional(),
   services:      z.array(z.string().max(50)).min(1).max(20),
   hours:         z.string().min(2).max(100),
@@ -29,8 +33,20 @@ const reviewSchema = z.object({
   comment:  z.string().min(5).max(1000),
 })
 
-// ─── Serializer ───────────────────────────────────────────────
+// ─── Helper to build a full address string ───────────────────
+function buildAddressString(mechanic: {
+  address?: string | null
+  area?: string
+  city: string
+}): string {
+  const parts = []
+  if (mechanic.address) parts.push(mechanic.address)
+  if (mechanic.area) parts.push(mechanic.area)
+  if (mechanic.city) parts.push(mechanic.city)
+  return parts.join(', ')
+}
 
+// ─── Serializer (unchanged) ──────────────────────────────────
 function serializeMechanic(m: unknown, showContact = false) {
   const doc = m as Record<string, any>
   const { _id, __v, createdAt, updatedAt, reviewCount, location, ...rest } = doc
@@ -73,10 +89,12 @@ export async function searchMechanics(req: Request, res: Response): Promise<void
       if (isNaN(latN) || isNaN(lngN) || latN < -90 || latN > 90 || lngN < -180 || lngN > 180) {
         res.status(400).json({ error: 'Invalid coordinates' }); return
       }
+      // radius from query is in km; convert to meters for MongoDB
+      const radiusMeters = Math.min(Number(radius ?? 50), 100) * 1000
       filter.location = {
         $near: {
           $geometry: { type: 'Point', coordinates: [lngN, latN] },
-          $maxDistance: Math.min(Number(radius ?? 50000), 100000), // cap at 100km
+          $maxDistance: radiusMeters,
         },
       }
     }
@@ -98,7 +116,6 @@ export async function getMechanicById(req: Request, res: Response): Promise<void
   try {
     const m = await Mechanic.findById(req.params.id).lean()
     if (!m) { res.status(404).json({ error: 'Mechanic not found' }); return }
-    // Always show contact info on the full profile page
     res.json(serializeMechanic(m, true))
   } catch (err) {
     console.error('getMechanicById error:', err)
@@ -128,12 +145,33 @@ export async function createMechanic(req: AuthRequest, res: Response): Promise<v
     }
 
     const parsed = createMechanicSchema.parse(body)
-    const { lat, lng, ...rest } = parsed
+    let { lat, lng, ...rest } = parsed
 
     // Prevent duplicate listings per user
     const existing = await Mechanic.findOne({ userId: req.user!.userId })
     if (existing) {
       res.status(409).json({ error: 'You already have a mechanic listing' }); return
+    }
+
+    // If coordinates not provided, try to geocode from address
+    if (lat === undefined || lng === undefined) {
+      const addressStr = buildAddressString({ address: rest.address, area: rest.area, city: rest.city })
+      let coords = null
+      if (addressStr) {
+        coords = await geocodeAddress(addressStr)
+      }
+      if (!coords && rest.city) {
+        coords = await geocodeCity(rest.city)
+      }
+      if (coords) {
+        lat = coords.lat
+        lng = coords.lng
+      } else {
+        res.status(400).json({
+          error: 'Could not determine location from address. Please select a location on the map.',
+        })
+        return
+      }
     }
 
     const mechanic = await Mechanic.create({
@@ -175,15 +213,44 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
       body.priceRange = body.price_range
       delete body.price_range
     }
-    if (body.lat != null && body.lng != null) {
-      const lat = parseFloat(body.lat)
-      const lng = parseFloat(body.lng)
-      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+
+    // If lat/lng are provided directly, use them
+    let lat = body.lat != null ? parseFloat(body.lat) : undefined
+    let lng = body.lng != null ? parseFloat(body.lng) : undefined
+    if (!isNaN(lat) && !isNaN(lng) && lat !== undefined && lng !== undefined) {
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
         res.status(400).json({ error: 'Invalid coordinates' }); return
       }
       body.location = { type: 'Point', coordinates: [lng, lat] }
       delete body.lat
       delete body.lng
+    } else {
+      // No coordinates provided: check if address fields changed
+      const addressFields = ['address', 'area', 'city']
+      const addressChanged = addressFields.some(field => body[field] !== undefined && body[field] !== mechanic[field])
+      if (addressChanged) {
+        const newAddress = {
+          address: body.address !== undefined ? body.address : mechanic.address,
+          area:    body.area    !== undefined ? body.area    : mechanic.area,
+          city:    body.city    !== undefined ? body.city    : mechanic.city,
+        }
+        const addressStr = buildAddressString(newAddress)
+        let coords = null
+        if (addressStr) {
+          coords = await geocodeAddress(addressStr)
+        }
+        if (!coords && newAddress.city) {
+          coords = await geocodeCity(newAddress.city)
+        }
+        if (coords) {
+          body.location = { type: 'Point', coordinates: [coords.lng, coords.lat] }
+        } else {
+          res.status(400).json({
+            error: 'Could not determine new location from address. Please select a location on the map.',
+          })
+          return
+        }
+      }
     }
 
     // Whitelist allowed fields first
@@ -192,7 +259,6 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
       'address', 'location', 'serviceRadius', 'services', 'hours',
       'priceRange', 'bio', 'photos',
     ]
-    // Admins can also update plan
     if (isAdmin) allowedFields.push('plan')
 
     Object.keys(body).forEach(key => {
@@ -225,7 +291,7 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
   }
 }
 
-// ─── Admin ────────────────────────────────────────────────────
+// ─── Admin (unchanged) ───────────────────────────────────────
 
 export async function getAllMechanicsAdmin(req: Request, res: Response): Promise<void> {
   try {
@@ -296,7 +362,7 @@ export async function updateMechanicStatus(req: Request, res: Response): Promise
   }
 }
 
-// ─── Reviews ──────────────────────────────────────────────────
+// ─── Reviews (unchanged) ─────────────────────────────────────
 
 export async function getReviews(req: Request, res: Response): Promise<void> {
   try {
@@ -326,7 +392,6 @@ export async function getReviews(req: Request, res: Response): Promise<void> {
 
 export async function createReview(req: AuthRequest, res: Response): Promise<void> {
   try {
-    // Prevent reviewing own listing
     const mechanic = await Mechanic.findById(req.params.id)
     if (!mechanic) { res.status(404).json({ error: 'Mechanic not found' }); return }
     if (mechanic.userId.toString() === req.user!.userId) {
@@ -335,7 +400,6 @@ export async function createReview(req: AuthRequest, res: Response): Promise<voi
 
     const body = reviewSchema.parse(req.body)
 
-    // Prevent duplicate reviews
     const existing = await Review.findOne({ mechanicId: req.params.id, userId: req.user!.userId })
     if (existing) {
       res.status(409).json({ error: 'You have already reviewed this mechanic' }); return
@@ -347,7 +411,6 @@ export async function createReview(req: AuthRequest, res: Response): Promise<voi
       ...body,
     })
 
-    // Recalculate average rating
     const all = await Review.find({ mechanicId: req.params.id })
     const avg = all.reduce((s, r) => s + r.rating, 0) / all.length
     await Mechanic.findByIdAndUpdate(req.params.id, {

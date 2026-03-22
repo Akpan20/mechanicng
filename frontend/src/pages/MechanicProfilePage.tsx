@@ -35,7 +35,7 @@ type ReviewForm = z.infer<typeof reviewSchema>
 
 function StarPicker({ value, onChange }: {
   value: number
-  onChange: (_: number) => void // eslint-disable-line no-unused-vars
+  onChange: (_: number) => void
 }) {
   const [hover, setHover] = useState(0)
   return (
