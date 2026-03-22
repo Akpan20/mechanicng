@@ -21,10 +21,13 @@ import NotFoundPage        from '@/pages/NotFoundPage'
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 'admin' | 'mechanic' }) {
   const { isAuthenticated, isAdmin, isMechanic, isLoading } = useAuth()
-  if (isLoading)       return <div className="flex items-center justify-center h-64"><div className="loader" /></div>
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-64"><div className="loader" /></div>
+  )
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (role === 'admin'    && !isAdmin)   return <Navigate to="/" replace />
-  if (role === 'mechanic' && !isMechanic) return <Navigate to="/admin" replace />
+  if (role === 'admin'    && !isAdmin)    return <Navigate to="/" replace />
+  if (role === 'mechanic' && !isMechanic) return <Navigate to="/signup" replace />
   return <>{children}</>
 }
 
