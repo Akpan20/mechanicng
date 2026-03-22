@@ -5,11 +5,9 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import mongoSanitize from 'express-mongo-sanitize'
-
 import { connectDB } from './lib/db'
 import { errorHandler } from './middleware/errorHandler'
 import type { AuthRequest } from './middleware/auth'
-
 import authRoutes           from './routes/auth'
 import mechanicsRoutes      from './routes/mechanics'
 import adminMechanicsRoutes from './routes/adminMechanics'
@@ -23,6 +21,7 @@ const PORT = process.env.PORT ?? 4000
 
 // ─── Trust proxy (required on Render) ────────────────────────
 app.set('trust proxy', 1)
+app.set('etag', false)
 
 // ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173'
@@ -32,7 +31,7 @@ const corsOptions: cors.CorsOptions = {
   origin:         allowedOrigin,
   credentials:    true,
   methods:        ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma'],
 }
 app.options('*', cors(corsOptions))
 app.use(cors(corsOptions))

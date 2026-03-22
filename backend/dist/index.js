@@ -23,6 +23,7 @@ const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
 // ─── Trust proxy (required on Render) ────────────────────────
 app.set('trust proxy', 1);
+app.set('etag', false);
 // ─── CORS ─────────────────────────────────────────────────────
 const allowedOrigin = process.env.CLIENT_URL ?? 'http://localhost:5173';
 console.log(`CORS allowing origin: ${allowedOrigin}`);
@@ -30,7 +31,7 @@ const corsOptions = {
     origin: allowedOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma'],
 };
 app.options('*', (0, cors_1.default)(corsOptions));
 app.use((0, cors_1.default)(corsOptions));
