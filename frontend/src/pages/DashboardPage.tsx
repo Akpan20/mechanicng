@@ -381,8 +381,8 @@ export default function DashboardPage() {
                           <p className="text-sm text-gray-500 mt-1 italic">"{q.note}"</p>
                         )}
                         <p className="text-xs text-gray-600 mt-1">
-                          {q.createdAt
-                            ? new Date(q.createdAt).toLocaleDateString('en-NG', {
+                          {q.created_at
+                            ? new Date(q.created_at).toLocaleDateString('en-NG', {
                                 day: 'numeric', month: 'short', year: 'numeric',
                                 hour: '2-digit', minute: '2-digit',
                               })
