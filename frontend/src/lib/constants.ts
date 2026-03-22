@@ -116,3 +116,10 @@ export const HERO_GRADIENT = `
 `
 export const CTA_GRADIENT = 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(239,68,68,0.03) 100%)'
 export const BRAND_GRADIENT = 'linear-gradient(130deg, rgb(249,115,22) 0%, rgb(239,68,68) 100%)'
+
+export const DEFAULT_MAP_CENTER = { lat: 9.0765, lng: 7.3986 }
+export const DEFAULT_MAP_ZOOM   = 12
+export const DEFAULT_LOCATION_LABEL = 'Abuja'
+
+export const GEO_TIMEOUT_MS       = 10000
+export const GEO_FALLBACK_LABEL   = 'Abuja'

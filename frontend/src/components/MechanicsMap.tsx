@@ -1,31 +1,31 @@
-// src/components/MechanicsMap.tsx
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { proMarker, standardMarker, userMarker } from '@/lib/mapIcons'
 import { formatDistance } from '@/lib/geo'
+import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_LOCATION_LABEL } from '@/lib/constants'
 import type { Mechanic } from '@/types'
 
-// Recenter map when userLocation changes
 function Recenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
-  useEffect(() => { map.setView([lat, lng], 13) }, [map, lat, lng])
+  useEffect(() => { map.setView([lat, lng], DEFAULT_MAP_ZOOM) }, [map, lat, lng])
   return null
 }
 
 interface Props {
-  mechanics: Mechanic[]
+  mechanics:    Mechanic[]
   userLocation?: { lat: number; lng: number }
 }
 
 export default function MechanicsMap({ mechanics, userLocation }: Props) {
-  const center = userLocation ?? { lat: 9.0765, lng: 7.3986 } // Abuja default
+  const center = userLocation ?? DEFAULT_MAP_CENTER
 
   return (
     <MapContainer
       center={[center.lat, center.lng]}
-      zoom={12}
-      className="w-full h-[420px] rounded-xl z-0"
+      zoom={DEFAULT_MAP_ZOOM}
+      style={{ height: '420px', width: '100%' }}
+      className="rounded-xl z-0"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -36,7 +36,7 @@ export default function MechanicsMap({ mechanics, userLocation }: Props) {
         <>
           <Recenter lat={userLocation.lat} lng={userLocation.lng} />
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userMarker}>
-            <Popup>📍 Your location</Popup>
+            <Popup>📍 {DEFAULT_LOCATION_LABEL}</Popup>
           </Marker>
         </>
       )}
@@ -56,7 +56,9 @@ export default function MechanicsMap({ mechanics, userLocation }: Props) {
               {m.distance != null && !isNaN(m.distance) && (
                 <p className="text-sm text-orange-500 mb-1">{formatDistance(m.distance)}</p>
               )}
-              <p className="text-sm text-gray-500 mb-2">{m.phone}</p>
+              {m.phone && (
+                <p className="text-sm text-gray-500 mb-2">{m.phone}</p>
+              )}
               <Link
                 to={`/mechanic/${m.id}`}
                 className="text-sm text-orange-500 font-semibold hover:underline"
