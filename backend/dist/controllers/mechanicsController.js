@@ -1,7 +1,11 @@
 "use strict";
 // backend/src/controllers/mechanicsController.ts (updated)
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchMechanics = searchMechanics;
+exports.getMyMechanic = getMyMechanic;
 exports.getMechanicById = getMechanicById;
 exports.getMechanicByUserId = getMechanicByUserId;
 exports.createMechanic = createMechanic;
@@ -10,6 +14,7 @@ exports.getAllMechanicsAdmin = getAllMechanicsAdmin;
 exports.updateMechanicStatus = updateMechanicStatus;
 exports.getReviews = getReviews;
 exports.createReview = createReview;
+const mongoose_1 = __importDefault(require("mongoose"));
 const zod_1 = require("zod");
 const Mechanic_1 = require("../models/Mechanic");
 const Review_1 = require("../models/Review");
@@ -113,6 +118,22 @@ async function searchMechanics(req, res) {
     catch (err) {
         console.error('searchMechanics error:', err);
         res.status(500).json({ error: 'Failed to search mechanics' });
+    }
+}
+async function getMyMechanic(req, res) {
+    try {
+        const m = await Mechanic_1.Mechanic.findOne({
+            userId: new mongoose_1.default.Types.ObjectId(req.user.userId)
+        }).lean();
+        if (!m) {
+            res.status(404).json({ error: 'No listing found' });
+            return;
+        }
+        res.json(serializeMechanic(m, true));
+    }
+    catch (err) {
+        console.error('getMyMechanic error:', err);
+        res.status(500).json({ error: 'Failed to fetch mechanic' });
     }
 }
 async function getMechanicById(req, res) {
