@@ -4,29 +4,31 @@ import {
   searchMechanics,
   getMechanicById,
   getMechanicByUserId,
+  getMyMechanic,
   createMechanic,
   updateMechanic,
   updateMechanicStatus,
   getReviews,
   createReview,
-  getMyMechanic,        // ← add this
 } from '../controllers/mechanicsController'
 
 const router = Router()
 
-// Public
-router.get('/',             searchMechanics)
-router.get('/:id/reviews',  getReviews)
-router.get('/:id',          getMechanicById)
-
-// Authenticated — named routes BEFORE /:id
-router.get('/me',           authenticate, getMyMechanic)        // ← add this
+// ── Named routes FIRST — before any /:id routes ──────────────
+router.get('/me',           authenticate, getMyMechanic)
 router.get('/user/:userId', authenticate, getMechanicByUserId)
+
+// ── Public param routes ───────────────────────────────────────
+router.get('/',             searchMechanics)
+router.get('/:id',          getMechanicById)
+router.get('/:id/reviews',  getReviews)
+
+// ── Authenticated ─────────────────────────────────────────────
 router.post('/',            authenticate, createMechanic)
 router.post('/:id/reviews', authenticate, createReview)
 router.patch('/:id',        authenticate, updateMechanic)
 
-// Admin
+// ── Admin ─────────────────────────────────────────────────────
 router.patch('/:id/status', authenticate, requireAdmin, updateMechanicStatus)
 
 export default router
