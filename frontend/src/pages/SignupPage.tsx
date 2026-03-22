@@ -10,8 +10,11 @@ import { createMechanic } from '@/lib/api/mechanics'
 import { setUser, setProfile } from '@/store/authSlice'
 import type { AppDispatch } from '@/store'
 import { SERVICES, NIGERIAN_CITIES } from '@/lib/constants'
-import MapPicker from '@/components/mechanic/MapPicker' // <-- new import
+import MapPicker from '@/components/mechanic/MapPicker'
 
+// ─────────────────────────────────────────────────────────────
+// 📋 Form Schemas
+// ─────────────────────────────────────────────────────────────
 const accountSchema = z.object({
   full_name:        z.string().min(2, 'Full name required'),
   email:            z.string().email('Valid email required'),
@@ -31,8 +34,9 @@ const listingSchema = z.object({
   city:           z.string().min(1, 'City required'),
   area:           z.string().optional(),
   address:        z.string().optional(),
-  lat:            z.number({ invalid_type_error: 'Enter a valid latitude' }).min(-90).max(90).optional(),
-  lng:            z.number({ invalid_type_error: 'Enter a valid longitude' }).min(-180).max(180).optional(),
+  // ✅ FIX: Added .nullable() to accept null from MapPicker "Clear" button
+  lat:            z.number({ invalid_type_error: 'Enter a valid latitude' }).min(-90).max(90).optional().nullable(),
+  lng:            z.number({ invalid_type_error: 'Enter a valid longitude' }).min(-180).max(180).optional().nullable(),
   service_radius: z.number().optional(),
   services:       z.array(z.string()).min(1, 'Select at least one service'),
   hours:          z.string().min(2, 'Hours required'),
@@ -44,6 +48,9 @@ type AccountForm = z.infer<typeof accountSchema>
 type ListingForm = z.infer<typeof listingSchema>
 type Role = 'user' | 'mechanic'
 
+// ─────────────────────────────────────────────────────────────
+// 🧭 SignupPage Component
+// ─────────────────────────────────────────────────────────────
 export default function SignupPage() {
   const [role, setRole]               = useState<Role | null>(null)
   const [step, setStep]               = useState(1)
@@ -52,16 +59,17 @@ export default function SignupPage() {
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
 
   const accountForm = useForm<AccountForm>({ resolver: zodResolver(accountSchema) })
   const listingForm = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
-    defaultValues: { type: 'shop', price_range: 'mid', services: [] },
+    defaultValues: { type: 'shop', price_range: 'mid', services: [], lat: null, lng: null },
   })
 
-  // Watch the type to conditionally show radius / address
+  // Watch values for conditional rendering
   const mechanicType = listingForm.watch('type')
   const currentLat = listingForm.watch('lat')
   const currentLng = listingForm.watch('lng')
@@ -75,7 +83,6 @@ export default function SignupPage() {
   }
 
   // ── Step 1: Account ───────────────────────────────────────
-
   const onAccountSubmit = async (data: AccountForm) => {
     setError(null)
     if (role === 'user') {
@@ -99,7 +106,6 @@ export default function SignupPage() {
   }
 
   // ── Step 2: Listing ───────────────────────────────────────
-
   const onListingSubmit = async (data: ListingForm) => {
     if (!accountData) return
     setError(null)
@@ -145,7 +151,6 @@ export default function SignupPage() {
   const STEPS      = role === 'mechanic' ? MECH_STEPS : USER_STEPS
 
   // ── Role picker ───────────────────────────────────────────
-
   if (!role) return (
     <>
       <Helmet><title>Sign Up – MechanicNG</title></Helmet>
@@ -394,7 +399,6 @@ export default function SignupPage() {
                 Click on the map to set your exact location. This helps customers get directions to you.
               </p>
               
-              {/* Map container with border + focus ring for accessibility */}
               <div className={`rounded-lg overflow-hidden border ${
                 listingForm.formState.errors.lat ? 'border-red-300' : 'border-gray-200'
               }`}>
@@ -409,7 +413,7 @@ export default function SignupPage() {
                 />
               </div>
 
-              {/* Add above or below the map */}
+              {/* Use my current location */}
               <button
                 type="button"
                 onClick={() => {
@@ -440,8 +444,8 @@ export default function SignupPage() {
                 📍 Use my current location
               </button>
               
-              {/* Coordinate display + actions */}
-              {(currentLat && currentLng) && (
+              {/* Coordinate display + Clear button */}
+              {(currentLat != null && currentLng != null) && (
                 <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
                   <span>
                     📍 Selected: <code className="bg-gray-100 px-1 rounded">
@@ -449,10 +453,10 @@ export default function SignupPage() {
                     </code>
                   </span>
                   
-                  {/* Optional: Clear button */}
                   <button
                     type="button"
                     onClick={() => {
+                      // ✅ Now works: schema accepts null
                       listingForm.setValue('lat', null, { shouldValidate: true })
                       listingForm.setValue('lng', null, { shouldValidate: true })
                     }}
@@ -463,7 +467,7 @@ export default function SignupPage() {
                 </div>
               )}
               
-              {/* Hidden fields for form submission (redundant if using watch, but safe) */}
+              {/* Hidden fields for form submission */}
               <input type="hidden" {...listingForm.register('lat')} />
               <input type="hidden" {...listingForm.register('lng')} />
             </div>
