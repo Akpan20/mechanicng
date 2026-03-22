@@ -59,10 +59,10 @@ export function useUpdateMechanic() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Mechanic> }) =>
       api.patch<Mechanic>(`/api/mechanics/${id}`, data),
 
-    onSuccess: (updatedMechanic) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-mechanic'] })
+      queryClient.invalidateQueries({ queryKey: ['mechanic'] })
       queryClient.invalidateQueries({ queryKey: ['mechanics'] })
-      queryClient.setQueryData(['my-mechanic'], updatedMechanic)
     },
   })
 }
