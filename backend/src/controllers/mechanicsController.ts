@@ -214,10 +214,11 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
       delete body.price_range
     }
 
-    // If lat/lng are provided directly, use them
-    let lat = body.lat != null ? parseFloat(body.lat) : undefined
-    let lng = body.lng != null ? parseFloat(body.lng) : undefined
-    if (!isNaN(lat) && !isNaN(lng) && lat !== undefined && lng !== undefined) {
+    // Check undefined BEFORE passing to isNaN — fixes TS2345
+    const lat = body.lat != null ? parseFloat(body.lat) : undefined
+    const lng = body.lng != null ? parseFloat(body.lng) : undefined
+
+    if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
         res.status(400).json({ error: 'Invalid coordinates' }); return
       }
@@ -227,33 +228,31 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
     } else {
       // No coordinates provided: check if address fields changed
       const addressFields = ['address', 'area', 'city']
-      const addressChanged = addressFields.some(field => body[field] !== undefined && body[field] !== mechanic[field])
+      // Cast mechanic to any for dynamic string indexing — fixes TS7053
+      const addressChanged = addressFields.some(
+        field => body[field] !== undefined && body[field] !== (mechanic as any)[field]
+      )
       if (addressChanged) {
         const newAddress = {
-          address: body.address !== undefined ? body.address : mechanic.address,
-          area:    body.area    !== undefined ? body.area    : mechanic.area,
-          city:    body.city    !== undefined ? body.city    : mechanic.city,
+          address: body.address ?? mechanic.address,
+          area:    body.area    ?? mechanic.area,
+          city:    body.city    ?? mechanic.city,
         }
         const addressStr = buildAddressString(newAddress)
         let coords = null
-        if (addressStr) {
-          coords = await geocodeAddress(addressStr)
-        }
-        if (!coords && newAddress.city) {
-          coords = await geocodeCity(newAddress.city)
-        }
+        if (addressStr) coords = await geocodeAddress(addressStr)
+        if (!coords && newAddress.city) coords = await geocodeCity(newAddress.city)
         if (coords) {
           body.location = { type: 'Point', coordinates: [coords.lng, coords.lat] }
         } else {
           res.status(400).json({
             error: 'Could not determine new location from address. Please select a location on the map.',
-          })
-          return
+          }); return
         }
       }
     }
 
-    // Whitelist allowed fields first
+    // Whitelist allowed fields
     const allowedFields = [
       'name', 'type', 'phone', 'whatsapp', 'email', 'city', 'area',
       'address', 'location', 'serviceRadius', 'services', 'hours',
@@ -269,7 +268,6 @@ export async function updateMechanic(req: AuthRequest, res: Response): Promise<v
       res.status(400).json({ error: 'No valid fields to update' }); return
     }
 
-    // Audit log when admin edits someone else's listing
     if (isAdmin && !isOwner) {
       await AuditLog.create({
         adminId:    req.user!.userId,

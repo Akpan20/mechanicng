@@ -1,4 +1,5 @@
 "use strict";
+// backend/src/controllers/mechanicsController.ts (updated)
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchMechanics = searchMechanics;
 exports.getMechanicById = getMechanicById;
@@ -13,6 +14,8 @@ const zod_1 = require("zod");
 const Mechanic_1 = require("../models/Mechanic");
 const Review_1 = require("../models/Review");
 const AuditLog_1 = require("../models/AuditLog");
+const geo_1 = require("../lib/geo"); // <-- added
+// Schema with optional lat/lng
 const createMechanicSchema = zod_1.z.object({
     name: zod_1.z.string().min(2).max(100),
     type: zod_1.z.enum(['shop', 'mobile']),
@@ -22,8 +25,8 @@ const createMechanicSchema = zod_1.z.object({
     city: zod_1.z.string().min(2).max(100),
     area: zod_1.z.string().min(2).max(100),
     address: zod_1.z.string().max(200).optional(),
-    lat: zod_1.z.number().min(-90).max(90),
-    lng: zod_1.z.number().min(-180).max(180),
+    lat: zod_1.z.number().min(-90).max(90).optional(), // <-- optional
+    lng: zod_1.z.number().min(-180).max(180).optional(), // <-- optional
     serviceRadius: zod_1.z.number().min(0).max(500).optional(),
     services: zod_1.z.array(zod_1.z.string().max(50)).min(1).max(20),
     hours: zod_1.z.string().min(2).max(100),
@@ -35,7 +38,18 @@ const reviewSchema = zod_1.z.object({
     rating: zod_1.z.number().int().min(1).max(5),
     comment: zod_1.z.string().min(5).max(1000),
 });
-// ─── Serializer ───────────────────────────────────────────────
+// ─── Helper to build a full address string ───────────────────
+function buildAddressString(mechanic) {
+    const parts = [];
+    if (mechanic.address)
+        parts.push(mechanic.address);
+    if (mechanic.area)
+        parts.push(mechanic.area);
+    if (mechanic.city)
+        parts.push(mechanic.city);
+    return parts.join(', ');
+}
+// ─── Serializer (unchanged) ──────────────────────────────────
 function serializeMechanic(m, showContact = false) {
     const doc = m;
     const { _id, __v, createdAt, updatedAt, reviewCount, location, ...rest } = doc;
@@ -80,10 +94,12 @@ async function searchMechanics(req, res) {
                 res.status(400).json({ error: 'Invalid coordinates' });
                 return;
             }
+            // radius from query is in km; convert to meters for MongoDB
+            const radiusMeters = Math.min(Number(radius ?? 50), 100) * 1000;
             filter.location = {
                 $near: {
                     $geometry: { type: 'Point', coordinates: [lngN, latN] },
-                    $maxDistance: Math.min(Number(radius ?? 50000), 100000), // cap at 100km
+                    $maxDistance: radiusMeters,
                 },
             };
         }
@@ -106,7 +122,6 @@ async function getMechanicById(req, res) {
             res.status(404).json({ error: 'Mechanic not found' });
             return;
         }
-        // Always show contact info on the full profile page
         res.json(serializeMechanic(m, true));
     }
     catch (err) {
@@ -137,12 +152,33 @@ async function createMechanic(req, res) {
             delete body.price_range;
         }
         const parsed = createMechanicSchema.parse(body);
-        const { lat, lng, ...rest } = parsed;
+        let { lat, lng, ...rest } = parsed;
         // Prevent duplicate listings per user
         const existing = await Mechanic_1.Mechanic.findOne({ userId: req.user.userId });
         if (existing) {
             res.status(409).json({ error: 'You already have a mechanic listing' });
             return;
+        }
+        // If coordinates not provided, try to geocode from address
+        if (lat === undefined || lng === undefined) {
+            const addressStr = buildAddressString({ address: rest.address, area: rest.area, city: rest.city });
+            let coords = null;
+            if (addressStr) {
+                coords = await (0, geo_1.geocodeAddress)(addressStr);
+            }
+            if (!coords && rest.city) {
+                coords = await (0, geo_1.geocodeCity)(rest.city);
+            }
+            if (coords) {
+                lat = coords.lat;
+                lng = coords.lng;
+            }
+            else {
+                res.status(400).json({
+                    error: 'Could not determine location from address. Please select a location on the map.',
+                });
+                return;
+            }
         }
         const mechanic = await Mechanic_1.Mechanic.create({
             ...rest,
@@ -185,10 +221,11 @@ async function updateMechanic(req, res) {
             body.priceRange = body.price_range;
             delete body.price_range;
         }
-        if (body.lat != null && body.lng != null) {
-            const lat = parseFloat(body.lat);
-            const lng = parseFloat(body.lng);
-            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        // If lat/lng are provided directly, use them
+        let lat = body.lat != null ? parseFloat(body.lat) : undefined;
+        let lng = body.lng != null ? parseFloat(body.lng) : undefined;
+        if (!isNaN(lat) && !isNaN(lng) && lat !== undefined && lng !== undefined) {
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
                 res.status(400).json({ error: 'Invalid coordinates' });
                 return;
             }
@@ -196,13 +233,41 @@ async function updateMechanic(req, res) {
             delete body.lat;
             delete body.lng;
         }
+        else {
+            // No coordinates provided: check if address fields changed
+            const addressFields = ['address', 'area', 'city'];
+            const addressChanged = addressFields.some(field => body[field] !== undefined && body[field] !== mechanic[field]);
+            if (addressChanged) {
+                const newAddress = {
+                    address: body.address !== undefined ? body.address : mechanic.address,
+                    area: body.area !== undefined ? body.area : mechanic.area,
+                    city: body.city !== undefined ? body.city : mechanic.city,
+                };
+                const addressStr = buildAddressString(newAddress);
+                let coords = null;
+                if (addressStr) {
+                    coords = await (0, geo_1.geocodeAddress)(addressStr);
+                }
+                if (!coords && newAddress.city) {
+                    coords = await (0, geo_1.geocodeCity)(newAddress.city);
+                }
+                if (coords) {
+                    body.location = { type: 'Point', coordinates: [coords.lng, coords.lat] };
+                }
+                else {
+                    res.status(400).json({
+                        error: 'Could not determine new location from address. Please select a location on the map.',
+                    });
+                    return;
+                }
+            }
+        }
         // Whitelist allowed fields first
         const allowedFields = [
             'name', 'type', 'phone', 'whatsapp', 'email', 'city', 'area',
             'address', 'location', 'serviceRadius', 'services', 'hours',
             'priceRange', 'bio', 'photos',
         ];
-        // Admins can also update plan
         if (isAdmin)
             allowedFields.push('plan');
         Object.keys(body).forEach(key => {
@@ -234,7 +299,7 @@ async function updateMechanic(req, res) {
         res.status(500).json({ error: 'Failed to update mechanic' });
     }
 }
-// ─── Admin ────────────────────────────────────────────────────
+// ─── Admin (unchanged) ───────────────────────────────────────
 async function getAllMechanicsAdmin(req, res) {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -299,7 +364,7 @@ async function updateMechanicStatus(req, res) {
         res.status(500).json({ error: 'Failed to update mechanic status' });
     }
 }
-// ─── Reviews ──────────────────────────────────────────────────
+// ─── Reviews (unchanged) ─────────────────────────────────────
 async function getReviews(req, res) {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -326,7 +391,6 @@ async function getReviews(req, res) {
 }
 async function createReview(req, res) {
     try {
-        // Prevent reviewing own listing
         const mechanic = await Mechanic_1.Mechanic.findById(req.params.id);
         if (!mechanic) {
             res.status(404).json({ error: 'Mechanic not found' });
@@ -337,7 +401,6 @@ async function createReview(req, res) {
             return;
         }
         const body = reviewSchema.parse(req.body);
-        // Prevent duplicate reviews
         const existing = await Review_1.Review.findOne({ mechanicId: req.params.id, userId: req.user.userId });
         if (existing) {
             res.status(409).json({ error: 'You have already reviewed this mechanic' });
@@ -348,7 +411,6 @@ async function createReview(req, res) {
             userId: req.user.userId,
             ...body,
         });
-        // Recalculate average rating
         const all = await Review_1.Review.find({ mechanicId: req.params.id });
         const avg = all.reduce((s, r) => s + r.rating, 0) / all.length;
         await Mechanic_1.Mechanic.findByIdAndUpdate(req.params.id, {
