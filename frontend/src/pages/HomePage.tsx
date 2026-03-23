@@ -101,13 +101,14 @@ export default function HomePage() {
     navigate('/search')
   }
 
-  // Update handleUseLocation
   const handleUseLocation = async () => {
-    const coords = await getLocation()
+    const { coords, error } = await getLocation()
+
     if (!coords) {
-      toast.error(geoError ?? 'Could not get your location. Try searching by city instead.')
+      toast.error(error ?? 'Could not get your location. Try searching by city instead.')
       return
     }
+
     dispatch(setUserLocation(coords))
     dispatch(setResults(attachDistances(featured, coords)))
     dispatch(setHasSearched(true))
@@ -238,11 +239,14 @@ export default function HomePage() {
                 className="btn-outline w-full flex items-center justify-center gap-2 text-sm">
                 {geoLoading
                   ? <><span className="loader w-4 h-4" /> Getting location…</>
-                  : geoError
-                  ? <><span>⚠️</span> {geoError}</>
                   : <><span>📍</span> Use My Current Location</>
                 }
               </button>
+
+              {/* Temporary debug — shows error inline on mobile */}
+              {geoError && (
+                <p className="mt-2 text-xs text-red-400 text-center">{geoError}</p>
+              )}
             </div>
           </Reveal>
 
