@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { useGeolocation } from '@/hooks/useGeolocation'
 import { useMechanics } from '@/hooks/useMechanics'
+import { attachDistances } from '@/lib/geo'
 import MechanicCard from '@/components/mechanic/MechanicCard'
 import AdSlot from '@/components/ads/AdSlot'
 import {
-  SERVICES, SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
+  SERVICES, NIGERIAN_CITIES,
+  SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
 } from '@/lib/constants'
+import toast from 'react-hot-toast'
 import { useAppDispatch } from '@/store/hooks'
-import { setQuery, setResults, setHasSearched } from '@/store/searchSlice'
+import { setQuery, setUserLocation, setResults, setHasSearched } from '@/store/searchSlice'
 
 // ── Intersection-based reveal ─────────────────────────────────
 function Reveal({ children, delay = 0, className = '' }: {
@@ -67,16 +71,65 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>
 }
 
+// ── Stat item type ────────────────────────────────────────────
 type StatItem =
   | { icon: string; label: string; static: string }
   | { icon: string; label: string; value: number; suffix: string }
 
+// ── Component ─────────────────────────────────────────────────
 export default function HomePage() {
-  const navigate = useNavigate()
-  const dispatch = useAppDispatch()
+  const [city, setCity]       = useState('')
+  const [focused, setFocused] = useState(false)
+  const navigate              = useNavigate()
+  const dispatch              = useAppDispatch()
 
-  const { data: featured = [] } = useMechanics()
+  const { data: featured = [] }              = useMechanics()
   const featuredPro = featured.filter(m => m.plan === 'pro').slice(0, 3)
+  const { loading: geoLoading, getLocation } = useGeolocation()
+
+
+  const handleCitySearch = () => {
+    if (!city.trim()) return
+    dispatch(setQuery(city))
+    dispatch(setResults(
+      featured.filter(m =>
+        m.city.toLowerCase().includes(city.toLowerCase()) ||
+        m.area?.toLowerCase().includes(city.toLowerCase())
+      )
+    ))
+    dispatch(setHasSearched(true))
+    navigate('/search')
+  }
+
+  const handleUseLocation = async () => {
+    const debug = (msg: string) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#000;color:#0f0;padding:10px;z-index:9999;border-radius:8px;';
+      div.textContent = `DEBUG: ${msg}`;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    };
+
+    debug('Button clicked');
+    
+    const result = await getLocation();
+    debug(`Geo result: ${JSON.stringify(result)}`);
+    
+    if (!result.coords) {
+      debug(`Error: ${result.error}`);
+      toast.error(result.error || 'Could not get location');
+      return;
+    }
+
+    debug('Dispatching state...');
+    dispatch(setUserLocation(result.coords));
+    dispatch(setResults(attachDistances(featured, result.coords)));
+    dispatch(setHasSearched(true));
+    
+    debug('Navigating...');
+    navigate('/search');
+    debug('Navigate called');
+  };
 
   const handleServiceFilter = (service: string) => {
     dispatch(setQuery(service))
@@ -86,10 +139,10 @@ export default function HomePage() {
   }
 
   const stats: StatItem[] = [
-    { icon: '🔧', value: featured.length,     suffix: '+', label: 'Mechanics' },
-    { icon: '🏙️', value: SITE_STATS.cities,   suffix: '+', label: 'Cities'    },
-    { icon: '⭐', static: SITE_STATS.avgRating,             label: 'Avg Rating' },
-    { icon: '✓',  value: SITE_STATS.verified,  suffix: '%', label: 'Verified'   },
+    { icon: '🔧', value: featured.length,    suffix: '+', label: 'Mechanics' },
+    { icon: '🏙️', value: SITE_STATS.cities,  suffix: '+', label: 'Cities'    },
+    { icon: '⭐', static: SITE_STATS.avgRating,            label: 'Avg Rating' },
+    { icon: '✓',  value: SITE_STATS.verified, suffix: '%', label: 'Verified'   },
   ]
 
   return (
@@ -105,10 +158,11 @@ export default function HomePage() {
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden" style={{
         background: HERO_GRADIENT,
-        minHeight: 'clamp(480px, 80vh, 720px)',
+        minHeight: 'clamp(540px, 90vh, 820px)',
         display: 'flex',
         alignItems: 'center',
       }}>
+        {/* Dot-grid texture */}
         <div className="absolute inset-0 pointer-events-none" style={{
           backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
@@ -154,15 +208,56 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          {/* CTA buttons */}
+          {/* Search card */}
           <Reveal delay={210}>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center max-w-sm mx-auto mb-8 sm:mb-10">
-              <Link to="/search" className="btn-primary text-center text-sm sm:text-base flex items-center justify-center gap-2">
-                🔍 Find a Mechanic
-              </Link>
-              <Link to="/search" className="btn-outline text-center text-sm sm:text-base flex items-center justify-center gap-2">
-                🗺️ View on Map
-              </Link>
+            <div className="rounded-2xl p-4 sm:p-5 max-w-lg mx-auto mb-8 sm:mb-10" style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              backdropFilter: 'blur(10px)',
+            }}>
+              <div className="flex gap-2 sm:gap-3 mb-3">
+                <div className="relative flex-1">
+                  <input
+                    className="input w-full pl-8 sm:pl-9 text-sm sm:text-base"
+                    placeholder="City or area, e.g. Lekki…"
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    onKeyDown={e => e.key === 'Enter' && handleCitySearch()}
+                    list="cities"
+                    style={{
+                      boxShadow: focused ? '0 0 0 2px rgba(249,115,22,0.4)' : 'none',
+                      transition: 'box-shadow 200ms ease',
+                    }}
+                  />
+                  <span className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-sm">
+                    📍
+                  </span>
+                  <datalist id="cities">
+                    {NIGERIAN_CITIES.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+                <button className="btn-primary text-sm sm:text-base px-3 sm:px-5 whitespace-nowrap"
+                  onClick={handleCitySearch}>
+                  <span className="hidden sm:inline">Search</span>
+                  <span className="sm:hidden">🔍</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
+                <div className="flex-1 h-px bg-gray-800" />
+                <span>or</span>
+                <div className="flex-1 h-px bg-gray-800" />
+              </div>
+
+              <button onClick={handleUseLocation} disabled={geoLoading}
+                className="btn-outline w-full flex items-center justify-center gap-2 text-sm">
+                {geoLoading
+                  ? <><span className="loader w-4 h-4" /> Getting location…</>
+                  : <><span>📍</span></>
+                }
+              </button>
             </div>
           </Reveal>
 
