@@ -61,8 +61,26 @@ export function getCurrentPosition(): Promise<Coordinates> {
     }
     navigator.geolocation.getCurrentPosition(
       pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      err => reject(new Error(err.message)),
-      { timeout: 10000, enableHighAccuracy: true }
+      err => {
+        let message = 'Could not get your location'
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            message = 'Location permission denied. Please enable it in your browser or phone settings.'
+            break
+          case err.POSITION_UNAVAILABLE:
+            message = 'Location unavailable. Please try again or search by city.'
+            break
+          case err.TIMEOUT:
+            message = 'Location request timed out. Please try again.'
+            break
+        }
+        reject(new Error(message))
+      },
+      {
+        timeout:            15000,  // longer for mobile networks
+        enableHighAccuracy: false,  // true causes timeouts on many Android devices
+        maximumAge:         60000,  // accept cached position up to 1 min old
+      }
     )
   })
 }
