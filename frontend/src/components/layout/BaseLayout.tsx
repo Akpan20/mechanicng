@@ -20,6 +20,7 @@ const FOR_MECHANICS  = [['/signup','Create Listing'],['/pricing','View Plans']] 
 const COMPANY_LINKS  = [
   ['/about','About'],['/contact','Contact'],
   ['/terms','Terms'],['/privacy','Privacy'],['/cookies','Cookies'],
+  ['/demo','Interactive Demo'],   // 👈 added demo link in footer
 ] as const
 
 export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
@@ -79,6 +80,15 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
                 {l.label}
               </Link>
             ))}
+            {/* 👇 demo link added to desktop nav */}
+            <Link to="/demo"
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                isActive('/demo', undefined, location.pathname)
+                  ? 'text-brand-500 bg-brand-500/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}>
+              Interactive Demo
+            </Link>
           </div>
 
           {/* Desktop auth */}
@@ -125,6 +135,15 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
                 {l.label}
               </Link>
             ))}
+            {/* 👇 demo link added to mobile drawer */}
+            <Link to="/demo" onClick={close}
+              className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                isActive('/demo', undefined, location.pathname)
+                  ? 'text-brand-500 bg-brand-500/10'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+              }`}>
+              Interactive Demo
+            </Link>
 
             <div className="pt-2 mt-2 border-t border-gray-800 space-y-2">
               {isAuthenticated ? (

@@ -71,12 +71,10 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>
 }
 
-// ── Stat item type ────────────────────────────────────────────
 type StatItem =
   | { icon: string; label: string; static: string }
   | { icon: string; label: string; value: number; suffix: string }
 
-// ── Component ─────────────────────────────────────────────────
 export default function HomePage() {
   const [city, setCity]       = useState('')
   const [focused, setFocused] = useState(false)
@@ -88,7 +86,6 @@ export default function HomePage() {
   const featuredPro = featured.filter(m => m.plan === 'pro').slice(0, 3)
   const { getLocation } = useGeolocation()
 
-  // Check if geolocation is supported
   const isGeolocationSupported = typeof navigator !== 'undefined' && 'geolocation' in navigator
 
   const handleCitySearch = () => {
@@ -108,13 +105,11 @@ export default function HomePage() {
   }
 
   const handleUseLocation = useCallback(async () => {
-    // Check if geolocation is supported
     if (!isGeolocationSupported) {
       toast.error('Geolocation is not supported by your browser')
       return
     }
 
-    // Check for secure context (HTTPS/localhost)
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       toast.error('Location access requires a secure connection (HTTPS)')
       return
@@ -123,23 +118,15 @@ export default function HomePage() {
     setIsLocating(true)
 
     try {
-      // Try to get permission status first (if Permissions API is supported)
       if ('permissions' in navigator) {
         try {
-          const permissionStatus = await navigator.permissions.query({ 
-            name: 'geolocation' as const
-          })
-          
+          const permissionStatus = await navigator.permissions.query({ name: 'geolocation' as const })
           if (permissionStatus.state === 'denied') {
             toast.error('Location permission denied. Please enable location access in your browser settings.')
             setIsLocating(false)
             return
           }
-          
-          // Note: iOS Safari may show 'prompt' even when permission was previously granted
-          // We proceed anyway and let getCurrentPosition handle it
         } catch (_err) {
-          // Permissions API may not support geolocation on some browsers, continue anyway
           console.log('Permissions API query failed, proceeding with getCurrentPosition')
         }
       }
@@ -147,7 +134,6 @@ export default function HomePage() {
       const result = await getLocation()
 
       if (!result.coords) {
-        // Handle specific error cases
         if (result.error) {
           if (result.error.includes('denied') || result.error.includes('Denied')) {
             toast.error('Location access denied. Please allow location access in your browser settings.')
@@ -201,7 +187,7 @@ export default function HomePage() {
       </Helmet>
 
       {/* ══════════════════════════════════════════════════════
-          HERO
+          HERO SECTION – MATCHING DEMO STYLE
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden" style={{
         background: HERO_GRADIENT,
@@ -209,26 +195,24 @@ export default function HomePage() {
         display: 'flex',
         alignItems: 'center',
       }}>
-        {/* Dot-grid texture */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          maskImage: 'radial-gradient(ellipse 80% 90% at 50% 0%, black 0%, transparent 100%)',
-        }} />
+        {/* Grid pattern (like demo) */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
+        {/* Radial gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-radial pointer-events-none" />
 
         <div className="relative w-full max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-28 text-center">
-
           {/* Badge */}
           <Reveal delay={0}>
-            <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-5 sm:mb-7
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-5 sm:mb-7
               text-[10px] sm:text-xs font-bold tracking-widest uppercase"
               style={{
                 background: 'rgba(249,115,22,0.1)',
                 border: '1px solid rgba(249,115,22,0.25)',
                 color: BRAND_COLOR,
               }}>
-              🔧 Nigeria's #1 Mechanic Directory
-            </span>
+              <div className="w-2 h-2 bg-brand-500 rounded-full animate-pulse-slow" />
+              Nigeria's #1 Mechanic Directory
+            </div>
           </Reveal>
 
           {/* Headline */}
@@ -255,7 +239,7 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          {/* Search card */}
+          {/* Search card (glass effect) */}
           <Reveal delay={210}>
             <div className="rounded-2xl p-4 sm:p-5 max-w-lg mx-auto mb-8 sm:mb-10" style={{
               background: 'rgba(255,255,255,0.03)',
@@ -274,7 +258,7 @@ export default function HomePage() {
                     onKeyDown={e => e.key === 'Enter' && handleCitySearch()}
                     list="cities"
                     style={{
-                      boxShadow: focused ? '0 0 0 2px rgba(249,115,22,0.4)' : 'none',
+                      boxShadow: focused ? `0 0 0 2px ${BRAND_COLOR}40` : 'none',
                       transition: 'box-shadow 200ms ease',
                     }}
                   />
@@ -298,9 +282,8 @@ export default function HomePage() {
                 <div className="flex-1 h-px bg-gray-800" />
               </div>
 
-              {/* FIXED: Location button with proper text and loading state */}
-              <button 
-                onClick={handleUseLocation} 
+              <button
+                onClick={handleUseLocation}
                 disabled={isLocating || !isGeolocationSupported}
                 className={`btn-outline w-full flex items-center justify-center gap-2 text-sm transition-all duration-200 ${
                   !isGeolocationSupported ? 'opacity-50 cursor-not-allowed' : ''
@@ -318,8 +301,7 @@ export default function HomePage() {
                   </>
                 )}
               </button>
-              
-              {/* Helper text for mobile users */}
+
               {!isGeolocationSupported && (
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   Location services not available in your browser
@@ -335,16 +317,15 @@ export default function HomePage() {
             </div>
           </Reveal>
 
-          {/* Stats */}
+          {/* Stats (matching demo layout) */}
           <Reveal delay={320}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 max-w-sm sm:max-w-none mx-auto">
               {stats.map(stat => (
                 <div key={stat.label} className="text-center">
-                  <div className="mb-1" style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}>
+                  <div className="mb-1 text-2xl sm:text-3xl">
                     {stat.icon}
                   </div>
-                  <div className="font-extrabold font-mono"
-                    style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', color: BRAND_COLOR }}>
+                  <div className="font-extrabold font-mono text-2xl sm:text-3xl" style={{ color: BRAND_COLOR }}>
                     {'static' in stat
                       ? stat.static
                       : <Counter to={stat.value} suffix={stat.suffix} />
@@ -359,20 +340,20 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          BROWSE BY SERVICE
+          BROWSE BY SERVICE (like demo chip list)
       ══════════════════════════════════════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <Reveal>
           <p className="section-title mb-1 sm:mb-2">Browse by Service</p>
-          <h2 className="font-bold mb-5" style={{ fontSize: 'clamp(1.4rem, 5vw, 1.875rem)' }}>
+          <h2 className="font-bold mb-5 text-2xl sm:text-3xl">
             What do you need fixed?
           </h2>
         </Reveal>
 
         <Reveal delay={80}>
           <div
-            className="flex gap-2 md:flex-wrap -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0"
-            style={{ overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            className="flex gap-2 md:flex-wrap -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 overflow-x-auto"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {SERVICES.map(s => (
               <button key={s} onClick={() => handleServiceFilter(s)}
                 className="flex-shrink-0 md:flex-shrink rounded-xl px-3 py-2 sm:px-4 sm:py-2.5
@@ -392,13 +373,13 @@ export default function HomePage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          FEATURED MECHANICS
+          FEATURED MECHANICS (grid)
       ══════════════════════════════════════════════════════ */}
       {featuredPro.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-14">
           <Reveal>
             <p className="section-title mb-1 sm:mb-2">Featured</p>
-            <h2 className="font-bold mb-5 sm:mb-6" style={{ fontSize: 'clamp(1.4rem, 5vw, 1.875rem)' }}>
+            <h2 className="font-bold mb-5 sm:mb-6 text-2xl sm:text-3xl">
               Top Rated Mechanics
             </h2>
           </Reveal>
@@ -413,7 +394,7 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════
-          MECHANIC CTA BANNER
+          MECHANIC CTA BANNER (like demo’s cta-band)
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden border-y border-gray-800 py-14 sm:py-16 px-4"
         style={{ background: CTA_GRADIENT }}>
@@ -422,17 +403,16 @@ export default function HomePage() {
 
         <Reveal>
           <div className="relative max-w-2xl mx-auto text-center">
-            <div className="mb-4" style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)' }}>🔩</div>
-            <h2 className="font-extrabold mb-3" style={{ fontSize: 'clamp(1.75rem, 6vw, 2.75rem)' }}>
+            <div className="mb-4 text-5xl sm:text-6xl">🔩</div>
+            <h2 className="font-extrabold mb-3 text-3xl sm:text-4xl">
               Are you a mechanic?
             </h2>
-            <p className="text-gray-400 mb-8 leading-relaxed max-w-md mx-auto"
-              style={{ fontSize: 'clamp(0.9rem, 3vw, 1.1rem)' }}>
+            <p className="text-gray-400 mb-8 leading-relaxed max-w-md mx-auto text-base sm:text-lg">
               Get discovered by thousands of Nigerian drivers daily.
               Create your free listing and start growing your customer base.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
-              <Link to="/signup"  className="btn-primary text-center text-sm sm:text-base">
+              <Link to="/signup" className="btn-primary text-center text-sm sm:text-base">
                 Create Free Listing
               </Link>
               <Link to="/pricing" className="btn-outline text-center text-sm sm:text-base">

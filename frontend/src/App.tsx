@@ -21,6 +21,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import AdminPage from '@/pages/AdminPage'
 import AdminAdsPage from '@/pages/AdminAdsPage'
 import AdminSetupPage from '@/pages/AdminSetupPage'
+import DemoPage from '@/pages/DemoPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import AffiliateDashboardPage from '@/pages/AffiliateDashboardPage'
 
@@ -68,6 +69,7 @@ export default function App() {
       <Route path="/login" element={<Layout><LoginPage /></Layout>} />
       <Route path="/pricing" element={<Layout><PricingPage /></Layout>} />
       <Route path="/mechanic/:id" element={<MechanicLayout><MechanicProfilePage /></MechanicLayout>} />
+      <Route path="/demo" element={<Layout><DemoPage /></Layout>} />
 
       {/* Mechanic-only routes */}
       <Route

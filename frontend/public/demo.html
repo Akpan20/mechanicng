@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MechanicNG – Interactive Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --brand:#F97316;--brand-dark:#C2540A;--brand-glow:rgba(249,115,22,0.3);
+  --surface:#0F1117;--surface-2:#161B26;--surface-3:#1E2535;
+  --border:#2A3248;--text:#F0F2F7;--muted:#8B93A7;--subtle:#3D4663;
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);overflow-x:hidden}
+
+/* DEMO SHELL */
+.demo-shell{min-height:100vh;display:flex;flex-direction:column}
+
+/* TOP CONTROL BAR */
+.control-bar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(15,17,23,0.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:56px;gap:16px;
+}
+.ctrl-brand{display:flex;align-items:center;gap:10px}
+.ctrl-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--brand),#ef4444);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;
+  box-shadow:0 0 20px var(--brand-glow)}
+.ctrl-name{font-family:'Syne',sans-serif;font-weight:800;font-size:16px}
+.ctrl-name span{color:var(--brand)}
+.ctrl-badge{background:var(--brand);color:white;font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:20px;letter-spacing:1px;text-transform:uppercase}
+.ctrl-tabs{display:flex;gap:4px;flex:1;justify-content:center;overflow-x:auto}
+.ctrl-tab{
+  padding:6px 14px;border-radius:8px;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  background:transparent;color:var(--muted);transition:all .2s;white-space:nowrap;
+}
+.ctrl-tab:hover{background:var(--surface-3);color:var(--text)}
+.ctrl-tab.active{background:var(--brand);color:white;box-shadow:0 0 16px var(--brand-glow)}
+.ctrl-url{
+  font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);
+  background:var(--surface-3);padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border);white-space:nowrap;
+}
+
+/* SCREENS */
+.screens{margin-top:56px;position:relative}
+.screen{display:none;animation:fadeIn .35s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== SHARED COMPONENTS ===== */
+.site-nav{
+  position:sticky;top:56px;z-index:100;
+  background:rgba(15,17,23,0.95);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:60px;
+}
+.nav-logo{display:flex;align-items:center;gap:8px}
+.nav-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),#ef4444);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 0 16px var(--brand-glow)}
+.nav-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:18px}
+.nav-logo-text span{color:var(--brand)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;transition:all .2s;cursor:pointer}
+.nav-link:hover,.nav-link.active{color:var(--brand);background:rgba(249,115,22,.1)}
+.nav-auth{display:flex;gap:8px;align-items:center}
+.btn-ghost{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.btn-primary{padding:8px 18px;border-radius:8px;border:none;background:var(--brand);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 0 16px var(--brand-glow)}
+.btn-primary:hover{background:var(--brand-dark);transform:translateY(-1px)}
+
+/* ===== HOMEPAGE ===== */
+#home .hero{
+  min-height:88vh;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;padding:80px 40px;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(249,115,22,.08) 0%, transparent 70%);
+}
+.hero-bg-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:48px 48px;opacity:0.3;
+}
+.hero-glow{
+  position:absolute;top:20%;left:50%;transform:translateX(-50%);
+  width:600px;height:300px;
+  background:radial-gradient(ellipse, rgba(249,115,22,.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:720px}
+.hero-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);
+  color:var(--brand);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;margin-bottom:32px;
+}
+.hero-pill-dot{width:6px;height:6px;background:var(--brand);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero-h1{font-family:'Syne',sans-serif;font-size:clamp(42px,6vw,72px);font-weight:800;line-height:1.05;margin-bottom:24px}
+.hero-h1 .accent{color:var(--brand)}
+.hero-sub{font-size:18px;color:var(--muted);line-height:1.65;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:64px}
+.btn-hero{padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;border:none}
+.btn-hero-primary{background:var(--brand);color:white;box-shadow:0 0 32px var(--brand-glow)}
+.btn-hero-primary:hover{background:var(--brand-dark);transform:translateY(-2px);box-shadow:0 8px 40px var(--brand-glow)}
+.btn-hero-secondary{background:var(--surface-3);color:var(--text);border:1px solid var(--border)}
+.btn-hero-secondary:hover{border-color:var(--brand);color:var(--brand)}
+.hero-stats{display:flex;gap:48px;justify-content:center}
+.hero-stat{text-align:center}
+.hero-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--brand)}
+.hero-stat-label{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500}
+
+/* Feature Cards */
+.section{padding:80px 40px;max-width:1200px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;color:var(--brand);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:16px;line-height:1.2}
+.section-sub{font-size:16px;color:var(--muted);max-width:500px;line-height:1.65}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
+.feature-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:16px;
+  padding:28px;transition:all .3s;cursor:default;
+  background-image:radial-gradient(circle at top right, rgba(249,115,22,.04) 0%, transparent 60%);
+}
+.feature-card:hover{border-color:rgba(249,115,22,.4);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.feature-icon{font-size:28px;margin-bottom:16px}
+.feature-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px}
+.feature-desc{font-size:14px;color:var(--muted);line-height:1.65}
+
+/* Mechanic Cards */
+.mechanics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-top:40px}
+.mechanic-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;transition:all .3s;cursor:pointer;
+}
+.mechanic-card:hover{border-color:rgba(249,115,22,.4);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.mechanic-banner{height:90px;position:relative;display:flex;align-items:flex-end;padding:12px}
+.mechanic-avatar{
+  width:60px;height:60px;border-radius:50%;border:3px solid var(--surface-2);
+  background:linear-gradient(135deg,var(--brand),#ef4444);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  position:absolute;bottom:-20px;left:20px;box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.mechanic-body{padding:32px 20px 20px}
+.mechanic-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px}
+.mechanic-spec{font-size:12px;color:var(--brand);font-weight:600;margin-bottom:12px}
+.mechanic-meta{display:flex;gap:12px;flex-wrap:wrap}
+.mechanic-tag{background:var(--surface-3);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.mechanic-rating{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#fbbf24;margin-top:10px}
+.verified-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.1);color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-top:6px}
+
+/* CTA Band */
+.cta-band{
+  background:linear-gradient(135deg,rgba(249,115,22,.15) 0%,rgba(239,68,68,.08) 100%);
+  border:1px solid rgba(249,115,22,.2);border-radius:24px;
+  padding:64px 48px;text-align:center;margin:0 40px 80px;
+  position:relative;overflow:hidden;
+}
+.cta-band::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(249,115,22,.06) 0%,transparent 70%);
+}
+.cta-band-title{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:16px;position:relative}
+.cta-band-sub{font-size:16px;color:var(--muted);margin-bottom:32px;position:relative}
+
+/* ===== SEARCH PAGE ===== */
+#search .search-hero{
+  background:linear-gradient(180deg,rgba(249,115,22,.06) 0%,transparent 100%);
+  padding:60px 40px 40px;text-align:center;border-bottom:1px solid var(--border);
+}
+.search-hero-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:800;margin-bottom:16px}
+.search-bar-wrap{max-width:640px;margin:0 auto;position:relative}
+.search-bar{
+  display:flex;gap:0;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);
+}
+.search-input{
+  flex:1;background:transparent;border:none;outline:none;padding:16px 20px;
+  font-size:15px;color:var(--text);font-family:'DM Sans',sans-serif;
+}
+.search-input::placeholder{color:var(--muted)}
+.search-divider{width:1px;background:var(--border);margin:12px 0}
+.search-btn{background:var(--brand);color:white;border:none;padding:0 28px;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.search-btn:hover{background:var(--brand-dark)}
+.search-filters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.filter-chip{
+  padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s
+}
+.filter-chip:hover,.filter-chip.active{border-color:var(--brand);color:var(--brand);background:rgba(249,115,22,.08)}
+.search-results{max-width:1200px;margin:0 auto;padding:40px}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.results-count{font-size:14px;color:var(--muted)}
+.results-count strong{color:var(--text)}
+
+/* ===== SIGNUP PAGE ===== */
+#signup .auth-page,#login .auth-page{
+  min-height:calc(100vh - 116px);display:flex;align-items:center;justify-content:center;padding:40px;
+  background:radial-gradient(ellipse 60% 80% at 30% 50%,rgba(249,115,22,.05) 0%,transparent 60%);
+}
+.auth-split{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:900px;width:100%;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:24px;overflow:hidden}
+.auth-left{padding:56px 48px;background:linear-gradient(135deg,rgba(249,115,22,.1) 0%,rgba(239,68,68,.05) 100%);display:flex;flex-direction:column;justify-content:center}
+.auth-left-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--brand);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:24px;width:fit-content}
+.auth-left-title{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1.15;margin-bottom:16px}
+.auth-left-sub{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:32px}
+.auth-perks{display:flex;flex-direction:column;gap:12px}
+.auth-perk{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.auth-perk-check{width:20px;height:20px;background:rgba(34,197,94,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:#22c55e}
+.auth-right{padding:48px}
+.auth-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px}
+.auth-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px}
+.form-tabs{display:flex;gap:4px;margin-bottom:28px;background:var(--surface-3);padding:4px;border-radius:10px}
+.form-tab{flex:1;padding:8px;text-align:center;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.form-tab.active{background:var(--brand);color:white}
+.form-group{margin-bottom:18px}
+.form-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
+.form-input{
+  width:100%;background:var(--surface-3);border:1px solid var(--border);border-radius:10px;
+  padding:12px 16px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border .2s
+}
+.form-input:focus{border-color:var(--brand)}
+.form-input::placeholder{color:var(--subtle)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-submit{width:100%;padding:14px;border-radius:10px;border:none;background:var(--brand);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:all .2s;box-shadow:0 0 20px var(--brand-glow)}
+.form-submit:hover{background:var(--brand-dark);transform:translateY(-1px)}
+.form-footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+.form-footer a{color:var(--brand);text-decoration:none;font-weight:600}
+.form-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--subtle);font-size:12px}
+.form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ===== PRICING PAGE ===== */
+#pricing .pricing-hero{padding:60px 40px 0;text-align:center}
+.pricing-toggle{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-top:24px}
+.pricing-toggle-btn{padding:8px 20px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.pricing-toggle-btn.active{background:var(--brand);color:white}
+.pricing-save{display:inline-block;background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;padding:40px;max-width:1000px;margin:0 auto}
+.pricing-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:20px;
+  padding:36px;transition:all .3s;position:relative;overflow:hidden;
+}
+.pricing-card.popular{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand),0 16px 48px rgba(249,115,22,.15)}
+.pricing-card.popular::before{content:'Most Popular';position:absolute;top:20px;right:-28px;background:var(--brand);color:white;font-size:10px;font-weight:700;padding:4px 36px;transform:rotate(45deg);letter-spacing:1px;text-transform:uppercase}
+.pricing-plan{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.pricing-price{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1;margin-bottom:4px}
+.pricing-price span{font-size:20px;font-weight:500;color:var(--muted)}
+.pricing-period{font-size:12px;color:var(--muted);margin-bottom:24px}
+.pricing-desc{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6;min-height:56px}
+.pricing-features{list-style:none;margin-bottom:32px}
+.pricing-feature{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.pricing-feature:last-child{border:none}
+.pricing-check{color:#22c55e;font-size:14px;font-weight:700;flex-shrink:0}
+.pricing-x{color:var(--subtle);font-size:14px;flex-shrink:0}
+.pricing-feature.dim{color:var(--muted)}
+
+/* FOOTER */
+.site-footer{background:var(--surface-2);border-top:1px solid var(--border);padding:48px 40px 24px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:1200px;margin:0 auto 40px}
+.footer-brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px}
+.footer-brand-name span{color:var(--brand)}
+.footer-tagline{font-size:13px;color:var(--muted);line-height:1.65}
+.footer-col-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px}
+.footer-link{display:block;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:10px;transition:color .2s;cursor:pointer}
+.footer-link:hover{color:var(--brand)}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--subtle);max-width:1200px;margin:0 auto;flex-wrap:gap}
+.footer-paystack{display:flex;align-items:center;gap:6px;background:var(--surface-3);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+
+/* ===== AFFILIATE DASHBOARD ===== */
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px}
+.dash-label{font-size:11px;font-weight:700;color:var(--brand);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.dash-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.badge-green{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.badge-amber{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.badge-red{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.badge-gray{background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3)}
+.badge-purple{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
+.dash-tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:24px}
+.dash-tab{flex:1;padding:9px 16px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;text-align:center}
+.dash-tab:hover{color:var(--text)}
+.dash-tab.active{background:var(--brand);color:white;box-shadow:0 0 12px var(--brand-glow)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.stat-icon{font-size:24px;margin-bottom:8px}
+.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1}
+.stat-label{font-size:11px;color:var(--muted);font-weight:600;margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px}
+.card-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.card-body{padding:24px}
+.reflink-box{display:flex;gap:12px;align-items:center;margin-top:16px}
+.reflink-val{flex:1;background:var(--surface-3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--brand);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-copy{background:var(--brand);color:white;border:none;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap}
+.btn-copy:hover{background:var(--brand-dark)}
+.btn-copy.copied{background:#10b981}
+.referral-row{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border)}
+.referral-row:last-child{border:none}
+.referral-plan{font-size:14px;font-weight:600;text-transform:capitalize}
+.referral-date{font-size:11px;color:var(--muted);margin-top:3px}
+.referral-earn{font-weight:700;color:var(--brand);font-size:14px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:12px 20px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border)}
+.data-table td{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+.data-table tr:last-child td{border:none}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.payout-hero{text-align:center;padding:40px 24px}
+.payout-val{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:var(--brand);line-height:1;margin:12px 0}
+.payout-sub{font-size:13px;color:var(--muted)}
+.bank-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.bank-field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.bank-field-val{font-size:14px;font-weight:600;color:var(--text)}
+.payout-cta{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:16px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.payout-cta p{font-size:13px;color:var(--muted);line-height:1.6}
+.btn-payout{background:#10b981;color:white;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-payout:hover{background:#059669}
+/* Affiliate program promo */
+.promo-hero{text-align:center;padding:48px 40px 32px;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(249,115,22,.07) 0%,transparent 70%)}
+.promo-emoji{font-size:56px;margin-bottom:16px}
+.promo-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px}
+.promo-sub{font-size:16px;color:var(--muted);max-width:520px;margin:0 auto}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:0 40px 32px}
+.how-card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center}
+.how-icon{font-size:32px;margin-bottom:12px}
+.how-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px}
+.how-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.commission-table-wrap{padding:0 40px 32px;max-width:700px;margin:0 auto}
+.register-form{max-width:560px;margin:0 auto;padding:0 40px 48px}
+.form-section-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px}
+
+/* ===== ADVERTISER DASHBOARD ===== */
+.adv-header{padding:40px 40px 0}
+.adv-label{font-size:11px;font-weight:700;color:#a855f7;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.adv-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,38px);font-weight:800;margin-bottom:4px}
+.adv-industry{font-size:14px;color:var(--muted)}
+.adv-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:32px 40px 0}
+.adv-stat{background:#111827;border:1px solid #1f2937;border-radius:16px;padding:24px;text-align:center}
+.adv-stat-icon{font-size:32px;margin-bottom:12px}
+.adv-stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.adv-stat-label{font-size:12px;color:var(--muted);margin-top:6px;font-weight:500}
+.chart-wrap{margin:32px 40px 0;background:#111827;border:1px solid #1f2937;border-radius:16px;padding:24px}
+.chart-title{font-size:16px;font-weight:700;color:#d1d5db;margin-bottom:20px}
+.chart-bars{display:flex;align-items:flex-end;justify-content:space-between;height:140px;gap:6px}
+.chart-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.chart-bar-wrap{display:flex;gap:2px;align-items:flex-end;height:120px;width:100%;justify-content:center}
+.chart-bar{border-radius:4px 4px 0 0;min-height:4px;width:40%;transition:opacity .2s}
+.chart-bar:hover{opacity:.8}
+.chart-day{font-size:10px;color:#6b7280;font-weight:500}
+.chart-legend{display:flex;justify-content:center;gap:24px;margin-top:16px}
+.chart-legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#9ca3af}
+.chart-legend-dot{width:12px;height:4px;border-radius:2px}
+.campaigns-section{padding:32px 40px 40px}
+.campaigns-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.campaigns-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
+.btn-new-campaign{background:linear-gradient(135deg,#7c3aed,#f97316);color:white;border:none;padding:10px 24px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-new-campaign:hover{filter:brightness(1.1)}
+.campaign-card{background:#111827;border:1px solid #1f2937;border-radius:16px;padding:20px 24px;margin-bottom:12px;transition:border .2s}
+.campaign-card:hover{border-color:#374151}
+.campaign-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.campaign-headline{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.campaign-meta{font-size:13px;color:#6b7280}
+.campaign-metrics{display:flex;gap:24px;flex-wrap:wrap}
+.campaign-metric{text-align:center;min-width:72px}
+.campaign-metric-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}
+.campaign-metric-label{font-size:11px;color:#6b7280;margin-top:2px}
+
+/* SCROLL HINT */
+.scroll-hint{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:12px;color:var(--muted);box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideUp .5s ease 1s both}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .ctrl-tabs{display:none}
+  .auth-split{grid-template-columns:1fr}
+  .auth-left{display:none}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .hero-stats{gap:24px}
+  .section{padding:60px 20px}
+  .site-nav{padding:0 20px}
+  .search-results{padding:24px 20px}
+  .pricing-grid{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- CONTROL BAR -->
+<div class="control-bar">
+  <div class="ctrl-brand">
+    <div class="ctrl-icon">🔧</div>
+    <span class="ctrl-name">Mechanic<span>NG</span></span>
+    <span class="ctrl-badge">Demo</span>
+  </div>
+  <div class="ctrl-tabs">
+    <button class="ctrl-tab active" onclick="showScreen('home',this)">🏠 Home</button>
+    <button class="ctrl-tab" onclick="showScreen('search',this)">🔍 Find Mechanics</button>
+    <button class="ctrl-tab" onclick="showScreen('signup',this)">✍️ Sign Up</button>
+    <button class="ctrl-tab" onclick="showScreen('login',this)">🔑 Login</button>
+    <button class="ctrl-tab" onclick="showScreen('pricing',this)">💳 Pricing</button>
+    <button class="ctrl-tab" onclick="showScreen('affiliate',this)">💸 Affiliate</button>
+    <button class="ctrl-tab" onclick="showScreen('advertiser',this)">📢 Advertiser</button>
+  </div>
+  <div class="ctrl-url">mechanicng.com</div>
+</div>
+
+<!-- SCREENS CONTAINER -->
+<div class="screens">
+
+  <!-- ========== HOME ========== -->
+  <div class="screen active" id="home">
+    <nav class="site-nav">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">🔧</div>
+        <span class="nav-logo-text">Mechanic<span>NG</span></span>
+      </div>
+      <div class="nav-links">
+        <span class="nav-link active">Find a Mechanic</span>
+        <span class="nav-link" onclick="showScreen('search',null)">Search by City</span>
+        <span class="nav-link" onclick="showScreen('pricing',null)">Pricing</span>
+      </div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+        <button class="btn-primary" onclick="showScreen('signup',null)">Get Started</button>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-bg-grid"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="hero-pill">
+          <div class="hero-pill-dot"></div>
+          Nigeria's #1 Mechanic Directory
+        </div>
+        <h1 class="hero-h1">Find a Trusted<br/><span class="accent">Mechanic Near You</span></h1>
+        <p class="hero-sub">Connect with verified auto mechanics across Nigeria. Request quotes, read real reviews, and get your car fixed — fast.</p>
+        <div class="hero-actions">
+          <button class="btn-hero btn-hero-primary" onclick="showScreen('search',null)">🔍 Find a Mechanic</button>
+          <button class="btn-hero btn-hero-secondary" onclick="showScreen('signup',null)">🔧 List Your Workshop</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-num">500+</div>
+            <div class="hero-stat-label">Verified Mechanics</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">12</div>
+            <div class="hero-stat-label">States Covered</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">4.8★</div>
+            <div class="hero-stat-label">Average Rating</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <div class="section">
+      <div class="section-label">Why MechanicNG</div>
+      <h2 class="section-title">Built for Nigerian Roads</h2>
+      <p class="section-sub">Everything you need to find a mechanic you can trust — or grow your workshop business.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <div class="feature-title">Verified Profiles</div>
+          <div class="feature-desc">Every mechanic on our platform is verified. Real names, real workshops, real reviews from Nigerian car owners.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <div class="feature-title">Location-Based Search</div>
+          <div class="feature-desc">Find mechanics in your exact city — Lagos, Abuja, Port Harcourt, Kano, Enugu and more.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <div class="feature-title">Instant Quote Requests</div>
+          <div class="feature-desc">Send your car details and get quotes from multiple mechanics without leaving the platform.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⭐</div>
+          <div class="feature-title">Real Reviews</div>
+          <div class="feature-desc">Reviews from verified customers only. No fake ratings — just honest feedback from real Nigerian drivers.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <div class="feature-title">Secure Payments</div>
+          <div class="feature-desc">All transactions processed securely through Paystack — Nigeria's most trusted payment platform.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <div class="feature-title">Mobile Friendly</div>
+          <div class="feature-desc">Fully optimised for mobile — find a mechanic or manage your listing from any device, anywhere.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mechanic Preview -->
+    <div class="section" style="padding-top:0">
+      <div class="section-label">Top Mechanics</div>
+      <h2 class="section-title">Popular in Lagos</h2>
+      <div class="mechanics-grid">
+        <div class="mechanic-card" onclick="showScreen('search',null)">
+          <div class="mechanic-banner" style="background:linear-gradient(135deg,#1a2540,#2a3558)">
+            <div class="mechanic-avatar">👨‍🔧</div>
+          </div>
+          <div class="mechanic-body">
+            <div class="mechanic-name">Emeka Auto Works</div>
+            <div class="mechanic-spec">Engine Specialist</div>
+            <div class="verified-badge">✓ Verified</div>
+            <div class="mechanic-rating">★★★★★ 4.9 <span style="color:var(--muted);font-weight:400">(47 reviews)</span></div>
+            <div class="mechanic-meta" style="margin-top:12px">
+              <span class="mechanic-tag">📍 Ikeja</span>
+              <span class="mechanic-tag">Toyota • Honda</span>
+            </div>
+          </div>
+        </div>
+        <div class="mechanic-card" onclick="showScreen('search',null)">
+          <div class="mechanic-banner" style="background:linear-gradient(135deg,#1f1a2e,#2e2546)">
+            <div class="mechanic-avatar" style="background:linear-gradient(135deg,#7c3aed,#ec4899)">🔧</div>
+          </div>
+          <div class="mechanic-body">
+            <div class="mechanic-name">Chidi Motors Ltd</div>
+            <div class="mechanic-spec">General Repairs & Diagnostics</div>
+            <div class="verified-badge">✓ Verified</div>
+            <div class="mechanic-rating">★★★★★ 4.8 <span style="color:var(--muted);font-weight:400">(32 reviews)</span></div>
+            <div class="mechanic-meta" style="margin-top:12px">
+              <span class="mechanic-tag">📍 Lekki</span>
+              <span class="mechanic-tag">All Makes</span>
+            </div>
+          </div>
+        </div>
+        <div class="mechanic-card" onclick="showScreen('search',null)">
+          <div class="mechanic-banner" style="background:linear-gradient(135deg,#1a2e20,#1e4025)">
+            <div class="mechanic-avatar" style="background:linear-gradient(135deg,#16a34a,#15803d)">⚙️</div>
+          </div>
+          <div class="mechanic-body">
+            <div class="mechanic-name">Sunny Auto Centre</div>
+            <div class="mechanic-spec">Electrical & AC Systems</div>
+            <div class="verified-badge">✓ Verified</div>
+            <div class="mechanic-rating">★★★★☆ 4.6 <span style="color:var(--muted);font-weight:400">(21 reviews)</span></div>
+            <div class="mechanic-meta" style="margin-top:12px">
+              <span class="mechanic-tag">📍 Surulere</span>
+              <span class="mechanic-tag">Mercedes • BMW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Band -->
+    <div class="cta-band">
+      <h2 class="cta-band-title">Are You a Mechanic?<br/>Get Found by Thousands</h2>
+      <p class="cta-band-sub">Create your free listing in 5 minutes. No hidden fees. No credit card required.</p>
+      <button class="btn-hero btn-hero-primary" onclick="showScreen('signup',null)">🔧 Create Free Listing</button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-name">Mechanic<span>NG</span></div>
+          <div class="footer-tagline">Nigeria's trusted mechanic directory.<br/>Find. Fix. Move.</div>
+        </div>
+        <div>
+          <div class="footer-col-title">For Drivers</div>
+          <span class="footer-link" onclick="showScreen('home',null)">Find a Mechanic</span>
+          <span class="footer-link" onclick="showScreen('search',null)">Search by City</span>
+        </div>
+        <div>
+          <div class="footer-col-title">For Mechanics</div>
+          <span class="footer-link" onclick="showScreen('signup',null)">Create Listing</span>
+          <span class="footer-link" onclick="showScreen('pricing',null)">View Plans</span>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <span class="footer-link">About</span>
+          <span class="footer-link">Contact</span>
+          <span class="footer-link">Terms</span>
+          <span class="footer-link">Privacy</span>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 MechanicNG. Built for Nigerian roads.</span>
+        <span>Website developed by Akaninyene Akpan</span>
+        <div class="footer-paystack">🔒 Payments secured by Paystack</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========== SEARCH ========== -->
+  <div class="screen" id="search">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="showScreen('home',null)">Find a Mechanic</span>
+        <span class="nav-link active">Search by City</span>
+        <span class="nav-link" onclick="showScreen('pricing',null)">Pricing</span>
+      </div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+        <button class="btn-primary" onclick="showScreen('signup',null)">Get Started</button>
+      </div>
+    </nav>
+
+    <div class="search-hero">
+      <h1 class="search-hero-title">Find a Mechanic Near You</h1>
+      <p style="color:var(--muted);font-size:16px;margin-bottom:28px">Browse verified mechanics across Nigeria</p>
+      <div class="search-bar-wrap">
+        <div class="search-bar">
+          <input class="search-input" placeholder="🔍  Search by name, service or city..." />
+          <div class="search-divider"></div>
+          <input class="search-input" placeholder="📍  Lagos" style="max-width:160px"/>
+          <button class="search-btn">Search</button>
+        </div>
+      </div>
+      <div class="search-filters">
+        <button class="filter-chip active">All Services</button>
+        <button class="filter-chip">Engine Repair</button>
+        <button class="filter-chip">Body Work</button>
+        <button class="filter-chip">Electrical</button>
+        <button class="filter-chip">AC Repair</button>
+        <button class="filter-chip">Diagnostics</button>
+        <button class="filter-chip">Tyres</button>
+      </div>
+    </div>
+
+    <div class="search-results">
+      <div class="results-header">
+        <div class="results-count"><strong>24 mechanics</strong> found in Lagos</div>
+        <select style="background:var(--surface-2);border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option>Sort: Top Rated</option>
+          <option>Nearest First</option>
+          <option>Most Reviewed</option>
+        </select>
+      </div>
+      <div class="mechanics-grid">
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#1a2540,#2a3558)"><div class="mechanic-avatar">👨‍🔧</div></div><div class="mechanic-body"><div class="mechanic-name">Emeka Auto Works</div><div class="mechanic-spec">Engine Specialist</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★★ 4.9 <span style="color:var(--muted);font-weight:400">(47)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 Ikeja</span><span class="mechanic-tag">Toyota • Honda</span></div></div></div>
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#1f1a2e,#2e2546)"><div class="mechanic-avatar" style="background:linear-gradient(135deg,#7c3aed,#ec4899)">🔧</div></div><div class="mechanic-body"><div class="mechanic-name">Chidi Motors Ltd</div><div class="mechanic-spec">General Repairs & Diagnostics</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★★ 4.8 <span style="color:var(--muted);font-weight:400">(32)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 Lekki</span><span class="mechanic-tag">All Makes</span></div></div></div>
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#1a2e20,#1e4025)"><div class="mechanic-avatar" style="background:linear-gradient(135deg,#16a34a,#15803d)">⚙️</div></div><div class="mechanic-body"><div class="mechanic-name">Sunny Auto Centre</div><div class="mechanic-spec">Electrical & AC Systems</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★☆ 4.6 <span style="color:var(--muted);font-weight:400">(21)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 Surulere</span><span class="mechanic-tag">Mercedes • BMW</span></div></div></div>
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#2e1a1a,#3d2020)"><div class="mechanic-avatar" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">🚗</div></div><div class="mechanic-body"><div class="mechanic-name">Bello Auto Clinic</div><div class="mechanic-spec">Body Work & Painting</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★☆ 4.5 <span style="color:var(--muted);font-weight:400">(18)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 Agege</span><span class="mechanic-tag">Body • Paint</span></div></div></div>
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#1a2030,#222d42)"><div class="mechanic-avatar" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">🛠️</div></div><div class="mechanic-body"><div class="mechanic-name">TechDrive Garage</div><div class="mechanic-spec">Computerised Diagnostics</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★★ 4.9 <span style="color:var(--muted);font-weight:400">(63)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 VI</span><span class="mechanic-tag">All Makes</span></div></div></div>
+        <div class="mechanic-card"><div class="mechanic-banner" style="background:linear-gradient(135deg,#2e2a1a,#3d381a)"><div class="mechanic-avatar" style="background:linear-gradient(135deg,#d97706,#b45309)">⛽</div></div><div class="mechanic-body"><div class="mechanic-name">Ade's Workshop</div><div class="mechanic-spec">Gear & Transmission</div><div class="verified-badge">✓ Verified</div><div class="mechanic-rating">★★★★☆ 4.4 <span style="color:var(--muted);font-weight:400">(15)</span></div><div class="mechanic-meta" style="margin-top:12px"><span class="mechanic-tag">📍 Yaba</span><span class="mechanic-tag">Transmission</span></div></div></div>
+      </div>
+    </div>
+
+    <footer class="site-footer" style="margin-top:40px">
+      <div class="footer-bottom" style="border-top:none;padding-top:0">
+        <span>© 2025 MechanicNG. Built for Nigerian roads.</span>
+        <span>Website developed by Akaninyene Akpan</span>
+        <div class="footer-paystack">🔒 Payments secured by Paystack</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========== SIGNUP ========== -->
+  <div class="screen" id="signup">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+        <button class="btn-primary" onclick="showScreen('home',null)">← Home</button>
+      </div>
+    </nav>
+    <div class="auth-page">
+      <div class="auth-split">
+        <div class="auth-left">
+          <div class="auth-left-badge">🔧 For Mechanics</div>
+          <h2 class="auth-left-title">Grow Your Workshop Business Online</h2>
+          <p class="auth-left-sub">Join hundreds of mechanics across Nigeria already using MechanicNG to attract new customers and manage their business.</p>
+          <div class="auth-perks">
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Free listing — no credit card needed</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Get found by drivers in your city</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Receive quote requests directly</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Build trust with verified reviews</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Upgrade to Premium anytime</div>
+          </div>
+        </div>
+        <div class="auth-right">
+          <div class="auth-title">Create Your Account</div>
+          <div class="auth-subtitle">Get started in under 2 minutes</div>
+          <div class="form-tabs">
+            <button class="form-tab active">🔧 Mechanic</button>
+            <button class="form-tab">🚗 Driver</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" placeholder="Emeka"/></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" placeholder="Okafor"/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" placeholder="emeka@autoworks.ng" type="email"/></div>
+          <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" placeholder="+234 800 000 0000" type="tel"/></div>
+          <div class="form-group"><label class="form-label">Workshop Name</label><input class="form-input" placeholder="Emeka Auto Works"/></div>
+          <div class="form-group"><label class="form-label">City</label>
+            <select class="form-input" style="cursor:pointer">
+              <option value="">Select your city</option>
+              <option>Lagos</option><option>Abuja</option><option>Port Harcourt</option>
+              <option>Kano</option><option>Enugu</option><option>Ibadan</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" placeholder="Create a strong password" type="password"/></div>
+          <button class="form-submit">Create Free Account →</button>
+          <div class="form-footer">Already have an account? <a onclick="showScreen('login',null)" style="cursor:pointer">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LOGIN ========== -->
+  <div class="screen" id="login">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('home',null)">← Home</button>
+        <button class="btn-primary" onclick="showScreen('signup',null)">Get Started</button>
+      </div>
+    </nav>
+    <div class="auth-page">
+      <div class="auth-split" style="max-width:780px">
+        <div class="auth-left">
+          <div class="auth-left-badge">👋 Welcome back</div>
+          <h2 class="auth-left-title">Good to See You Again</h2>
+          <p class="auth-left-sub">Sign in to manage your profile, check quote requests, and grow your automotive business on MechanicNG.</p>
+          <div class="auth-perks" style="margin-top:32px">
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>View your quote requests</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Manage your workshop listing</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Respond to customer reviews</div>
+            <div class="auth-perk"><div class="auth-perk-check">✓</div>Track your profile analytics</div>
+          </div>
+        </div>
+        <div class="auth-right">
+          <div class="auth-title">Sign In</div>
+          <div class="auth-subtitle">Welcome back to MechanicNG</div>
+          <div class="form-group" style="margin-top:8px"><label class="form-label">Email Address</label><input class="form-input" placeholder="you@example.com" type="email"/></div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" placeholder="Your password" type="password"/></div>
+          <div style="text-align:right;margin-bottom:16px"><a style="font-size:13px;color:var(--brand);text-decoration:none;cursor:pointer;font-weight:600">Forgot password?</a></div>
+          <button class="form-submit">Sign In →</button>
+          <div class="form-divider">or</div>
+          <div class="form-footer">Don't have an account? <a onclick="showScreen('signup',null)" style="cursor:pointer">Create one free</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PRICING ========== -->
+  <div class="screen" id="pricing">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="showScreen('home',null)">Find a Mechanic</span>
+        <span class="nav-link" onclick="showScreen('search',null)">Search by City</span>
+        <span class="nav-link active">Pricing</span>
+      </div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+        <button class="btn-primary" onclick="showScreen('signup',null)">Get Started</button>
+      </div>
+    </nav>
+    <div class="pricing-hero">
+      <div class="section-label" style="margin:0 auto 12px">For Mechanics</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:800;margin-bottom:12px">Simple, Transparent Pricing</h1>
+      <p style="color:var(--muted);font-size:16px">Start free. Upgrade when you're ready to grow.</p>
+      <div class="pricing-toggle">
+        <button class="pricing-toggle-btn active">Monthly</button>
+        <button class="pricing-toggle-btn">Annual <span class="pricing-save">Save 20%</span></button>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-plan">Free</div>
+        <div class="pricing-price">₦0<span>/mo</span></div>
+        <div class="pricing-period">Forever free</div>
+        <div class="pricing-desc">Get started with a basic listing and get discovered by local drivers.</div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Basic mechanic profile</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Appear in city searches</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Up to 5 service listings</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Customer reviews</li>
+          <li class="pricing-feature dim"><span class="pricing-x">✗</span>Priority placement</li>
+          <li class="pricing-feature dim"><span class="pricing-x">✗</span>Photo gallery</li>
+          <li class="pricing-feature dim"><span class="pricing-x">✗</span>Direct messaging</li>
+          <li class="pricing-feature dim"><span class="pricing-x">✗</span>Analytics dashboard</li>
+        </ul>
+        <button class="btn-ghost" style="width:100%;padding:12px;font-size:14px" onclick="showScreen('signup',null)">Get Started Free</button>
+      </div>
+
+      <div class="pricing-card popular">
+        <div class="pricing-plan" style="color:var(--brand)">Pro</div>
+        <div class="pricing-price">₦3,500<span>/mo</span></div>
+        <div class="pricing-period">Billed monthly</div>
+        <div class="pricing-desc">Everything you need to stand out and win more customers consistently.</div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Everything in Free</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span><strong>Priority search placement</strong></li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Full photo gallery (20 photos)</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Direct customer messaging</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Unlimited service listings</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Analytics dashboard</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Verified Pro badge</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Quote request notifications</li>
+        </ul>
+        <button class="btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="showScreen('signup',null)">Start Pro →</button>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-plan">Business</div>
+        <div class="pricing-price">₦8,000<span>/mo</span></div>
+        <div class="pricing-period">Billed monthly</div>
+        <div class="pricing-desc">For established workshops and multi-location garages ready to scale.</div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Everything in Pro</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span><strong>Top 3 featured placement</strong></li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Multiple staff profiles</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Unlimited photos & videos</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Advanced analytics & reports</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Homepage feature rotation</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Dedicated account support</li>
+          <li class="pricing-feature"><span class="pricing-check">✓</span>Custom profile branding</li>
+        </ul>
+        <button class="btn-ghost" style="width:100%;padding:12px;font-size:14px" onclick="showScreen('signup',null)">Contact Sales</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:0 40px 60px;color:var(--muted);font-size:14px">
+      All plans include: Paystack-secured billing · Cancel anytime · No hidden fees
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-bottom" style="border-top:none;padding-top:0">
+        <span>© 2025 MechanicNG. Built for Nigerian roads.</span>
+        <span>Website developed by Akaninyene Akpan</span>
+        <div class="footer-paystack">🔒 Payments secured by Paystack</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========== AFFILIATE DASHBOARD ========== -->
+  <div class="screen" id="affiliate">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="showScreen('home',null)">Home</span>
+        <span class="nav-link active">Affiliate Program</span>
+      </div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+        <button class="btn-primary" onclick="showScreen('signup',null)">Get Started</button>
+      </div>
+    </nav>
+
+    <!-- Toggle: show promo or dashboard -->
+    <div style="display:flex;justify-content:center;gap:12px;padding:20px 40px 0;flex-wrap:wrap">
+      <button class="btn-primary" id="aff-view-dash" onclick="toggleAffView('dash')">📊 View Dashboard</button>
+      <button class="btn-ghost" id="aff-view-promo" onclick="toggleAffView('promo')">💸 Program Info</button>
+    </div>
+
+    <!-- PROGRAM PROMO (not-yet-registered state) -->
+    <div id="aff-promo">
+      <div class="promo-hero">
+        <div class="promo-emoji">💸</div>
+        <h1 class="promo-title">Earn Money by Referring Mechanics</h1>
+        <p class="promo-sub">Join our affiliate program and earn <strong style="color:var(--brand)">20% commission</strong> for every mechanic you refer who upgrades to a paid plan.</p>
+      </div>
+
+      <div class="how-grid">
+        <div class="how-card"><div class="how-icon">🔗</div><div class="how-title">Get Your Link</div><div class="how-desc">Register and receive your unique referral link instantly</div></div>
+        <div class="how-card"><div class="how-icon">📣</div><div class="how-title">Share It</div><div class="how-desc">Share with mechanics who need more customers</div></div>
+        <div class="how-card"><div class="how-icon">💰</div><div class="how-title">Earn Commission</div><div class="how-desc">Get 20% of every subscription payment they make</div></div>
+      </div>
+
+      <div class="commission-table-wrap">
+        <div class="card">
+          <div class="card-header"><h3>Commission Structure</h3></div>
+          <table class="data-table">
+            <thead><tr><th>Plan</th><th>Price</th><th>Your Commission</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Standard</td><td style="color:var(--muted)">₦2,500/mo</td><td style="font-weight:700;color:var(--brand)">₦500</td></tr>
+              <tr><td style="font-weight:600">Pro</td><td style="color:var(--muted)">₦6,000/mo</td><td style="font-weight:700;color:var(--brand)">₦1,200</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="register-form">
+        <div class="card card-body">
+          <div class="form-section-title">Join the Affiliate Program</div>
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" placeholder="Your full name" value="Akaninyene Akpan"/></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" placeholder="your@email.com" value="akaninyene@example.com" type="email"/></div>
+          <button class="form-submit" onclick="toggleAffView('dash')">🚀 Join Now — It's Free</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFFILIATE DASHBOARD (registered state) -->
+    <div id="aff-dash" style="display:none;max-width:900px;margin:0 auto;padding:32px 40px 48px">
+      <div class="dash-header">
+        <div>
+          <div class="dash-label">Affiliate Program</div>
+          <div class="dash-title">Welcome, Akaninyene</div>
+        </div>
+        <span class="status-badge badge-green">🟢 Active</span>
+      </div>
+
+      <div class="dash-tabs">
+        <button class="dash-tab active" onclick="switchAffTab('aff-overview',this)">📊 Overview</button>
+        <button class="dash-tab" onclick="switchAffTab('aff-referrals',this)">💬 Referrals (7)</button>
+        <button class="dash-tab" onclick="switchAffTab('aff-payout',this)">💳 Payout</button>
+      </div>
+
+      <!-- Overview Tab -->
+      <div id="aff-overview">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" style="color:#10b981">₦24,400</div><div class="stat-label">Total Earned</div></div>
+          <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-val" style="color:#f59e0b">₦7,200</div><div class="stat-label">Pending Payout</div></div>
+          <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" style="color:#a855f7">7</div><div class="stat-label">Total Referrals</div></div>
+          <div class="stat-card"><div class="stat-icon">%</div><div class="stat-val" style="color:var(--brand)">20%</div><div class="stat-label">Commission Rate</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h3>Your Referral Link</h3></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Share this link with mechanics. When they upgrade, you earn commission automatically.</p>
+            <div class="reflink-box">
+              <div class="reflink-val">https://mechanicng.com/ref/AKPAN2025</div>
+              <button class="btn-copy" id="copyBtn" onclick="handleCopy()">Copy</button>
+            </div>
+            <p style="font-size:11px;color:var(--subtle);margin-top:8px">Your unique code: <span style="font-family:monospace;color:var(--brand);font-weight:700">AKPAN2025</span></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Recent Referrals</h3></div>
+          <div>
+            <div class="referral-row"><div><div class="referral-plan">Pro Plan</div><div class="referral-date">12 Jan 2025</div></div><div style="text-align:right"><div class="referral-earn">+₦1,200</div><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid</span></div></div>
+            <div class="referral-row"><div><div class="referral-plan">Standard Plan</div><div class="referral-date">5 Jan 2025</div></div><div style="text-align:right"><div class="referral-earn">+₦500</div><span class="status-badge badge-amber" style="font-size:10px;padding:3px 8px">Pending Payout</span></div></div>
+            <div class="referral-row"><div><div class="referral-plan">Pro Plan</div><div class="referral-date">28 Dec 2024</div></div><div style="text-align:right"><div class="referral-earn">+₦1,200</div><span class="status-badge badge-amber" style="font-size:10px;padding:3px 8px">Pending Payout</span></div></div>
+            <div class="referral-row"><div><div class="referral-plan">Standard Plan</div><div class="referral-date">20 Dec 2024</div></div><div style="text-align:right"><div class="referral-earn">+₦500</div><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Referrals Tab -->
+      <div id="aff-referrals" style="display:none">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">7 total referrals</p>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Plan</th><th>Amount Paid</th><th>Commission</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Pro</td><td style="font-family:monospace;color:#d1d5db">₦6,000</td><td style="font-weight:700;color:var(--brand)">₦1,200</td><td><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid Out</span></td><td style="color:var(--muted);font-size:12px">12 Jan 2025</td></tr>
+              <tr><td style="font-weight:600">Standard</td><td style="font-family:monospace;color:#d1d5db">₦2,500</td><td style="font-weight:700;color:var(--brand)">₦500</td><td><span class="status-badge badge-amber" style="font-size:10px;padding:3px 8px">Pending Payout</span></td><td style="color:var(--muted);font-size:12px">5 Jan 2025</td></tr>
+              <tr><td style="font-weight:600">Pro</td><td style="font-family:monospace;color:#d1d5db">₦6,000</td><td style="font-weight:700;color:var(--brand)">₦1,200</td><td><span class="status-badge badge-amber" style="font-size:10px;padding:3px 8px">Pending Payout</span></td><td style="color:var(--muted);font-size:12px">28 Dec 2024</td></tr>
+              <tr><td style="font-weight:600">Standard</td><td style="font-family:monospace;color:#d1d5db">₦2,500</td><td style="font-weight:700;color:var(--brand)">₦500</td><td><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid Out</span></td><td style="color:var(--muted);font-size:12px">20 Dec 2024</td></tr>
+              <tr><td style="font-weight:600">Pro</td><td style="font-family:monospace;color:#d1d5db">₦6,000</td><td style="font-weight:700;color:var(--brand)">₦1,200</td><td><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid Out</span></td><td style="color:var(--muted);font-size:12px">10 Dec 2024</td></tr>
+              <tr><td style="font-weight:600">Standard</td><td style="font-family:monospace;color:#d1d5db">₦2,500</td><td style="font-weight:700;color:var(--brand)">₦500</td><td><span class="status-badge badge-gray" style="font-size:10px;padding:3px 8px">Processing</span></td><td style="color:var(--muted);font-size:12px">2 Dec 2024</td></tr>
+              <tr><td style="font-weight:600">Pro</td><td style="font-family:monospace;color:#d1d5db">₦6,000</td><td style="font-weight:700;color:var(--brand)">₦1,200</td><td><span class="status-badge badge-green" style="font-size:10px;padding:3px 8px">✓ Paid Out</span></td><td style="color:var(--muted);font-size:12px">18 Nov 2024</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payout Tab -->
+      <div id="aff-payout" style="display:none">
+        <div class="card" style="margin-bottom:20px">
+          <div class="payout-hero">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Available for Payout</p>
+            <div class="payout-val">₦7,200</div>
+            <p class="payout-sub">Payouts are processed manually within 3–5 business days after request.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <h3>Bank Details</h3>
+            <button class="btn-ghost" style="font-size:12px;padding:6px 14px">✏️ Edit</button>
+          </div>
+          <div class="card-body">
+            <div class="bank-grid">
+              <div><div class="bank-field-label">Bank</div><div class="bank-field-val">Access Bank</div></div>
+              <div><div class="bank-field-label">Account Number</div><div class="bank-field-val">0123456789</div></div>
+              <div><div class="bank-field-label">Account Name</div><div class="bank-field-val">Akaninyene Akpan</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="payout-cta">
+          <p>You have <strong style="color:#10b981">₦7,200</strong> ready for payout to <strong>Access Bank — 0123456789</strong>. Contact us to request your payout.</p>
+          <button class="btn-payout">📧 Request Payout</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer" style="margin-top:40px">
+      <div class="footer-bottom" style="border-top:none;padding-top:0">
+        <span>© 2025 MechanicNG. Built for Nigerian roads.</span>
+        <span>Website developed by Akaninyene Akpan</span>
+        <div class="footer-paystack">🔒 Payments secured by Paystack</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========== ADVERTISER DASHBOARD ========== -->
+  <div class="screen" id="advertiser">
+    <nav class="site-nav">
+      <div class="nav-logo"><div class="nav-logo-icon">🔧</div><span class="nav-logo-text">Mechanic<span>NG</span></span></div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="showScreen('home',null)">Home</span>
+        <span class="nav-link active">Advertiser Dashboard</span>
+      </div>
+      <div class="nav-auth">
+        <button class="btn-ghost" onclick="showScreen('login',null)">Sign In</button>
+      </div>
+    </nav>
+
+    <div class="adv-header">
+      <div class="adv-label">Advertiser Dashboard</div>
+      <div class="adv-title">AutoParts Nigeria Ltd</div>
+      <div class="adv-industry">Automotive Parts & Accessories</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="adv-stats-grid">
+      <div class="adv-stat"><div class="adv-stat-icon">📢</div><div class="adv-stat-val" style="color:#f97316">3</div><div class="adv-stat-label">Campaigns</div></div>
+      <div class="adv-stat"><div class="adv-stat-icon">👁️</div><div class="adv-stat-val" style="color:#a855f7">18,420</div><div class="adv-stat-label">Impressions</div></div>
+      <div class="adv-stat"><div class="adv-stat-icon">🖱️</div><div class="adv-stat-val" style="color:#10b981">1,247</div><div class="adv-stat-label">Total Clicks</div></div>
+      <div class="adv-stat"><div class="adv-stat-icon">📈</div><div class="adv-stat-val" style="color:#f59e0b">6.77%</div><div class="adv-stat-label">Avg CTR</div></div>
+      <div class="adv-stat"><div class="adv-stat-icon">💰</div><div class="adv-stat-val" style="color:#6366f1">₦42,000</div><div class="adv-stat-label">Total Spent</div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-wrap">
+      <div class="chart-title">Performance – Last 7 Days</div>
+      <div class="chart-bars" id="advChart"></div>
+      <div class="chart-legend">
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#a855f7"></div>Impressions</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#f97316"></div>Clicks</div>
+      </div>
+    </div>
+
+    <!-- Campaigns -->
+    <div class="campaigns-section">
+      <div class="campaigns-header">
+        <div class="campaigns-title">Your Campaigns</div>
+        <button class="btn-new-campaign">+ New Campaign</button>
+      </div>
+
+      <div class="campaign-card">
+        <div class="campaign-top">
+          <div>
+            <div class="campaign-headline">
+              Quality Auto Parts – Fast Delivery
+              <span class="status-badge badge-green" style="font-size:10px;padding:3px 10px">Active</span>
+            </div>
+            <div class="campaign-meta">Homepage Banner, Search Results · 1 Jan 2025 → 31 Jan 2025</div>
+          </div>
+          <div class="campaign-metrics">
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#a855f7">8,240</div><div class="campaign-metric-label">Views</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f97316">612</div><div class="campaign-metric-label">Clicks</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#10b981">7.43%</div><div class="campaign-metric-label">CTR</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f59e0b">₦18,000</div><div class="campaign-metric-label">Budget</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="campaign-card">
+        <div class="campaign-top">
+          <div>
+            <div class="campaign-headline">
+              Genuine Toyota & Honda Spare Parts
+              <span class="status-badge badge-green" style="font-size:10px;padding:3px 10px">Active</span>
+            </div>
+            <div class="campaign-meta">Mechanic Profile Pages · 5 Jan 2025 → 5 Feb 2025</div>
+          </div>
+          <div class="campaign-metrics">
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#a855f7">7,180</div><div class="campaign-metric-label">Views</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f97316">481</div><div class="campaign-metric-label">Clicks</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#10b981">6.70%</div><div class="campaign-metric-label">CTR</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f59e0b">₦15,000</div><div class="campaign-metric-label">Budget</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="campaign-card">
+        <div class="campaign-top">
+          <div>
+            <div class="campaign-headline">
+              End of Year Parts Clearance Sale
+              <span class="status-badge badge-gray" style="font-size:10px;padding:3px 10px">Ended</span>
+            </div>
+            <div class="campaign-meta">Search Results · 1 Dec 2024 → 31 Dec 2024</div>
+          </div>
+          <div class="campaign-metrics">
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#a855f7">3,000</div><div class="campaign-metric-label">Views</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f97316">154</div><div class="campaign-metric-label">Clicks</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#10b981">5.13%</div><div class="campaign-metric-label">CTR</div></div>
+            <div class="campaign-metric"><div class="campaign-metric-val" style="color:#f59e0b">₦9,000</div><div class="campaign-metric-label">Budget</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-bottom" style="border-top:none;padding-top:0">
+        <span>© 2025 MechanicNG. Built for Nigerian roads.</span>
+        <span>Website developed by Akaninyene Akpan</span>
+        <div class="footer-paystack">🔒 Payments secured by Paystack</div>
+      </div>
+    </footer>
+  </div>
+
+</div><!-- end screens -->
+
+<script>
+function showScreen(id, btnEl) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.ctrl-tab').forEach(t => t.classList.remove('active'));
+  if (btnEl) {
+    btnEl.classList.add('active');
+  } else {
+    const map = {home:0,search:1,signup:2,login:3,pricing:4,affiliate:5,advertiser:6};
+    const tabs = document.querySelectorAll('.ctrl-tab');
+    if (tabs[map[id]] !== undefined) tabs[map[id]].classList.add('active');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Affiliate view toggle (promo vs dashboard)
+function toggleAffView(view) {
+  const promo = document.getElementById('aff-promo');
+  const dash  = document.getElementById('aff-dash');
+  const btnD  = document.getElementById('aff-view-dash');
+  const btnP  = document.getElementById('aff-view-promo');
+  if (view === 'dash') {
+    promo.style.display = 'none'; dash.style.display = 'block';
+    btnD.className = 'btn-ghost'; btnP.className = 'btn-primary';
+  } else {
+    promo.style.display = 'block'; dash.style.display = 'none';
+    btnD.className = 'btn-primary'; btnP.className = 'btn-ghost';
+  }
+}
+
+// Affiliate inner tabs
+function switchAffTab(tabId, btnEl) {
+  ['aff-overview','aff-referrals','aff-payout'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById(tabId).style.display = 'block';
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+}
+
+// Copy referral link
+function handleCopy() {
+  const btn = document.getElementById('copyBtn');
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+}
+
+// Filter chips
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.pricing-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.pricing-toggle-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.form-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.closest('.form-tabs').querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Build advertiser bar chart
+(function buildChart() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const imp =  [220, 290, 270, 520, 440, 310, 370];
+  const clk =  [14,   26,  20,  46,  33,  25,  29];
+  const maxImp = Math.max(...imp);
+  const wrap = document.getElementById('advChart');
+  if (!wrap) return;
+  days.forEach((d, i) => {
+    const col = document.createElement('div');
+    col.className = 'chart-col';
+    const bw = document.createElement('div');
+    bw.className = 'chart-bar-wrap';
+    const bImp = document.createElement('div');
+    bImp.className = 'chart-bar';
+    bImp.style.cssText = `background:#a855f7;height:${(imp[i]/maxImp)*110}px`;
+    const bClk = document.createElement('div');
+    bClk.className = 'chart-bar';
+    bClk.style.cssText = `background:#f97316;height:${(clk[i]/maxImp)*110}px`;
+    bw.appendChild(bImp); bw.appendChild(bClk);
+    const lbl = document.createElement('div');
+    lbl.className = 'chart-day'; lbl.textContent = d;
+    col.appendChild(bw); col.appendChild(lbl);
+    wrap.appendChild(col);
+  });
+})();
+</script>
+</body>
+</html>
