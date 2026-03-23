@@ -14,7 +14,7 @@ export default function AdminSetupPage() {
     e.preventDefault()
     setError(null)
     try {
-      await signInWithAdmin(email, password, fullName, adminSecret)
+      await signInWithAdmin(email, password, fullName)
       navigate('/admin')
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed')
