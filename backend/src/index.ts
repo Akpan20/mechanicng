@@ -15,6 +15,7 @@ import quotesRoutes         from './routes/quotes'
 import subscriptionsRoutes  from './routes/subscriptions'
 import adsRoutes            from './routes/ads'
 import reviewsRouter        from './routes/reviews'
+import affiliateRoutes      from './routes/affiliates'
 
 const app  = express()
 const PORT = process.env.PORT ?? 4000
@@ -62,6 +63,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }))
 
 // ─── Body parsers ─────────────────────────────────────────────
+// Apply specific limits to different routes
 app.use('/api/auth',      express.json({ limit: '10kb'  })) // tight limit on auth
 app.use('/api/mechanics', express.json({ limit: '1mb'   })) // allows photo URLs
 app.use(express.json({ limit: '100kb' }))                   // default for everything else
@@ -92,15 +94,18 @@ const apiLimiter = rateLimit({
   legacyHeaders:   false,
 })
 
-// Specific auth routes first, then global API limiter
-app.use('/api/auth/login',    authLimiter)
-app.use('/api/auth/signup',   authLimiter)
-app.use('/api/auth/reset',    authLimiter)
+// Apply auth-specific limiters before the global API limiter
+app.use('/api/auth/login',           authLimiter)
+app.use('/api/auth/signup',          authLimiter)
+app.use('/api/auth/reset',           authLimiter)
 app.use('/api/auth/forgot-password', authLimiter)
 app.use('/api/auth/reset-password',  authLimiter)
-app.use('/api',               apiLimiter)
+
+// Global rate limiter for all /api endpoints (applies to routes registered after this)
+app.use('/api', apiLimiter)
 
 // ─── Routes ───────────────────────────────────────────────────
+// All routes after this point are covered by the global rate limiter
 app.use('/api/auth',          authRoutes)
 app.use('/api/mechanics',     mechanicsRoutes)
 app.use('/api/admin',         adminMechanicsRoutes)
@@ -108,6 +113,7 @@ app.use('/api/quotes',        quotesRoutes)
 app.use('/api/subscriptions', subscriptionsRoutes)
 app.use('/api/ads',           adsRoutes)
 app.use('/api/reviews',       reviewsRouter)
+app.use('/api/affiliates',    affiliateRoutes)   // moved after the global limiter
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }))
 

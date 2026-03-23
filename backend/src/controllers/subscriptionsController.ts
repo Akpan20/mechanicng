@@ -88,4 +88,64 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
     console.error('Webhook error:', (err as Error).message)
     res.json({ received: true })
   }
+
+  // After confirming payment succeeded
+const mechanic = await Mechanic.findOne({ userId: user._id })
+const referredByCode = user.referredBy
+
+if (referredByCode) {
+  const affiliate = await Affiliate.findOne({ code: referredByCode, status: 'active' })
+  if (affiliate) {
+    const amountNGN  = event.data.amount / 100  // Paystack sends kobo
+    const commission = Math.round(amountNGN * affiliate.commissionRate)
+
+    await Referral.create({
+      affiliateId:    affiliate._id,
+      referredUserId: user._id,
+      mechanicId:     mechanic?._id,
+      plan:           event.data.plan?.name ?? 'unknown',
+      amountPaid:     amountNGN,
+      commission,
+      paystackRef:    event.data.reference,
+      status:         'credited',
+    })
+
+    await Affiliate.findByIdAndUpdate(affiliate._id, {
+      $inc: {
+        totalEarnings:  commission,
+        pendingPayout:  commission,
+        totalReferrals: 1,
+      }
+    })
+  }
+  
+  const mechanic = await Mechanic.findOne({ userId: user._id })
+  const referredByCode = user.referredBy
+
+  if (referredByCode) {
+    const affiliate = await Affiliate.findOne({ code: referredByCode, status: 'active' })
+    if (affiliate) {
+      const amountNGN  = event.data.amount / 100  // Paystack sends kobo
+      const commission = Math.round(amountNGN * affiliate.commissionRate)
+
+      await Referral.create({
+        affiliateId:    affiliate._id,
+        referredUserId: user._id,
+        mechanicId:     mechanic?._id,
+        plan:           event.data.plan?.name ?? 'unknown',
+        amountPaid:     amountNGN,
+        commission,
+        paystackRef:    event.data.reference,
+        status:         'credited',
+      })
+
+      await Affiliate.findByIdAndUpdate(affiliate._id, {
+        $inc: {
+          totalEarnings:  commission,
+          pendingPayout:  commission,
+          totalReferrals: 1,
+        }
+      })
+    }
+  }
 }

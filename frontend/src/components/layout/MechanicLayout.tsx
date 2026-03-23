@@ -7,6 +7,7 @@ export default function MechanicLayout({ children }: { children: React.ReactNode
     { to: '/search',    label: 'Search',          match: '/search'   },
     { to: '/dashboard', label: 'My Listing',      match: '/dashboard'},
     { to: '/pricing',   label: 'Plans',           match: '/pricing'  },
+    { to: '/affiliate', label: '💸 Earn',          match: '/affiliate' },
   ]
 
   return (

@@ -14,6 +14,7 @@ const signupSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
   fullName: z.string().min(2, 'Full name required').max(100),
   role:     z.enum(['user', 'mechanic']).default('user'),
+  ref:      z.string().max(20).optional(),
 })
 
 const loginSchema = z.object({
@@ -67,6 +68,8 @@ const transporter = nodemailer.createTransport({
 export async function signup(req: Request, res: Response): Promise<void> {
   try {
     const body = signupSchema.parse(req.body)
+    const { ref, ...userData } = body  // extract referral code
+    
 
     const exists = await User.findOne({ email: body.email })
     if (exists) {
@@ -194,7 +197,7 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     res.status(500).json({ error: 'Failed to process request' })
   }
 }
-
+referredBy: ref ?? null,
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   try {
     const { token, password } = resetPasswordSchema.parse(req.body)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
@@ -59,6 +59,8 @@ export default function SignupPage() {
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  const refCode = searchParams.get('ref') ?? undefined
   
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
@@ -88,7 +90,7 @@ export default function SignupPage() {
     if (role === 'user') {
       setLoading(true)
       try {
-        const { user } = await signUp(data.email, data.password, data.full_name, 'user')
+        const { user } = await signUp(data.email, data.password, data.full_name, 'user', refCode)
         if (!user) throw new Error('Account creation failed')
         dispatch(setUser({ id: user.id, email: user.email }))
         dispatch(setProfile(user))
@@ -111,7 +113,13 @@ export default function SignupPage() {
     setError(null)
     setLoading(true)
     try {
-      const { user } = await signUp(accountData.email, accountData.password, accountData.full_name, 'mechanic')
+      const { user } = await signUp(
+        accountData.email,
+        accountData.password,
+        accountData.full_name,
+        'mechanic',
+        refCode,          // ← pass ref code
+      )
       if (!user) throw new Error('Account creation failed')
       dispatch(setUser({ id: user.id, email: user.email }))
       dispatch(setProfile(user))
@@ -544,6 +552,14 @@ export default function SignupPage() {
             <h2 className="text-2xl font-extrabold mb-3">
               {role === 'mechanic' ? "You're on the list!" : 'Welcome to MechanicNG!'}
             </h2>
+
+            {/* Referral acknowledgement */}
+            {refCode && (
+              <div className="bg-brand-500/10 border border-brand-500/30 rounded-xl p-3 mb-4 text-sm text-brand-500">
+                🎉 You signed up via a referral link — your referrer will earn commission when you upgrade!
+              </div>
+            )}
+
             <p className="text-gray-400 mb-6 leading-relaxed">
               {role === 'mechanic'
                 ? 'Your listing has been submitted and is under review. We typically approve listings within 24–48 hours.'

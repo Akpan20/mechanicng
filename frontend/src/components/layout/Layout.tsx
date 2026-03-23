@@ -11,6 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navLinks = [
     { to: '/',          label: 'Find a Mechanic' },
     { to: '/pricing',   label: 'For Mechanics'   },
+    { to: '/affiliate', label: '💸 Earn' },
     ...(isMechanic ? [{ to: '/dashboard', label: 'My Listing' }] : []),
     ...(isAdmin    ? [{ to: '/admin',     label: 'Admin'      }] : []),
     ...(!user             ? [{ to: '/signup',    label: 'Sign Up'    }] : []),
