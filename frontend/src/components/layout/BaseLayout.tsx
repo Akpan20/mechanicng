@@ -65,6 +65,8 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
         <meta property="og:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
         <meta property="og:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
         <meta property="og:url" content="https://mechanicng.com" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="MechanicNG" />
