@@ -10,6 +10,7 @@ import {
   SERVICES, NIGERIAN_CITIES,
   SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
 } from '@/lib/constants'
+import toast from 'react-hot-toast'
 import { useAppDispatch } from '@/store/hooks'
 import { setQuery, setUserLocation, setResults, setHasSearched } from '@/store/searchSlice'
 
@@ -82,9 +83,10 @@ export default function HomePage() {
   const navigate              = useNavigate()
   const dispatch              = useAppDispatch()
 
-  const { loading: geoLoading, getLocation } = useGeolocation()
   const { data: featured = [] }              = useMechanics()
   const featuredPro = featured.filter(m => m.plan === 'pro').slice(0, 3)
+  const { loading: geoLoading, getLocation, error: geoError } = useGeolocation()
+
 
   const handleCitySearch = () => {
     if (!city.trim()) return
@@ -99,9 +101,13 @@ export default function HomePage() {
     navigate('/search')
   }
 
+  // Update handleUseLocation
   const handleUseLocation = async () => {
     const coords = await getLocation()
-    if (!coords) return
+    if (!coords) {
+      toast.error(geoError ?? 'Could not get your location. Try searching by city instead.')
+      return
+    }
     dispatch(setUserLocation(coords))
     dispatch(setResults(attachDistances(featured, coords)))
     dispatch(setHasSearched(true))
@@ -232,6 +238,8 @@ export default function HomePage() {
                 className="btn-outline w-full flex items-center justify-center gap-2 text-sm">
                 {geoLoading
                   ? <><span className="loader w-4 h-4" /> Getting location…</>
+                  : geoError
+                  ? <><span>⚠️</span> {geoError}</>
                   : <><span>📍</span> Use My Current Location</>
                 }
               </button>
