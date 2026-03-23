@@ -1,6 +1,5 @@
 // src/components/layout/BaseLayout.tsx
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
 import { signOut } from '@/lib/api/auth'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -9,12 +8,6 @@ import { selectUser, selectProfile, selectIsAdmin, logout } from '@/store/authSl
 
 interface NavLink { to: string; label: string; match?: string }
 interface BaseLayoutProps { children: React.ReactNode; navLinks: NavLink[] }
-
-// Default Open Graph image – replace with your actual image URL.
-// It is best to store this in an environment variable, e.g. process.env.VITE_DEFAULT_OG_IMAGE
-const DEFAULT_OG_IMAGE = 'https://mechanicng-frontend.onrender.com/og-image.jpg' // <-- UPDATE THIS
-const DEFAULT_OG_IMAGE_WIDTH = '1200'    // adjust to your image dimensions
-const DEFAULT_OG_IMAGE_HEIGHT = '630'    // adjust to your image dimensions
 
 function isActive(to: string, match: string | undefined, pathname: string) {
   if (match) return pathname.startsWith(match)
@@ -57,36 +50,6 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
 
   return (
     <>
-      {/* ── Global SEO & Social Meta Tags ──────────────────── */}
-      <Helmet>
-        {/* Default title and description */}
-        <title>MechanicNG – Find Trusted Mechanics in Nigeria</title>
-        <meta name="description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-
-        {/* Open Graph (Facebook, LinkedIn, WhatsApp, etc.) */}
-        <meta property="og:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
-        <meta property="og:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
-        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
-        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
-        <meta property="og:image:type" content="image/jpeg" /> 
-        <meta property="og:image:alt" content="MechanicNG – Find Trusted Mechanics in Nigeria" /> 
-        <meta property="og:url" content="https://mechanicng.com" />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="MechanicNG" />
-
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="MechanicNG – Find Trusted Mechanics" />
-        <meta name="twitter:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
-
-        {/* Additional SEO */}
-        <meta name="robots" content="index, follow" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="canonical" href="https://mechanicng.com" />
-      </Helmet>
-
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 bg-surface-900/95 backdrop-blur-sm border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
