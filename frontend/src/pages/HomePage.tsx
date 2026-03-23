@@ -102,33 +102,34 @@ export default function HomePage() {
   }
 
   const handleUseLocation = async () => {
-    // Disable button immediately to prevent double-taps on mobile
-    if (geoLoading) return
-    
-    const result = await getLocation()
+    const debug = (msg: string) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#000;color:#0f0;padding:10px;z-index:9999;border-radius:8px;';
+      div.textContent = `DEBUG: ${msg}`;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    };
 
+    debug('Button clicked');
+    
+    const result = await getLocation();
+    debug(`Geo result: ${JSON.stringify(result)}`);
+    
     if (!result.coords) {
-      // Always show error - mobile often fails silently
-      const errorMsg = result.error || 'Could not get your location. Try searching by city instead.'
-      toast.error(errorMsg)
-      return
+      debug(`Error: ${result.error}`);
+      toast.error(result.error || 'Could not get location');
+      return;
     }
 
-    // Use a microtask to ensure state updates flush before navigation
-    // This is crucial for mobile browsers
-    dispatch(setUserLocation(result.coords))
-    dispatch(setResults(attachDistances(featured, result.coords)))
-    dispatch(setHasSearched(true))
+    debug('Dispatching state...');
+    dispatch(setUserLocation(result.coords));
+    dispatch(setResults(attachDistances(featured, result.coords)));
+    dispatch(setHasSearched(true));
     
-    // Small delay on mobile to ensure Redux state updates complete
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-    if (isMobile) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-    
-    // Use replace: false to ensure navigation stack works correctly on mobile
-    navigate('/search', { replace: false })
-  }
+    debug('Navigating...');
+    navigate('/search');
+    debug('Navigate called');
+  };
 
   const handleServiceFilter = (service: string) => {
     dispatch(setQuery(service))
