@@ -53,33 +53,42 @@ export async function geocodeCity(city: string): Promise<Coordinates | null> {
   }
 }
 
-export function getCurrentPosition(): Promise<Coordinates> {
+export const getCurrentPosition = (): Promise<Coordinates> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by your browser'))
       return
     }
+
+    // Debug logging for mobile
+    console.log('Requesting geolocation...', {
+      protocol: window.location.protocol,
+      isSecureContext: window.isSecureContext,
+      userAgent: navigator.userAgent
+    })
+
     navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      err => {
-        let message = 'Could not get your location'
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            message = 'Location permission denied. Please enable it in your browser or phone settings.'
-            break
-          case err.POSITION_UNAVAILABLE:
-            message = 'Location unavailable. Please try again or search by city.'
-            break
-          case err.TIMEOUT:
-            message = 'Location request timed out. Please try again.'
-            break
+      (position) => {
+        console.log('Geolocation success:', position.coords)
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+      },
+      (error) => {
+        console.error('Geolocation error:', error.code, error.message)
+        // Map error codes to user-friendly messages
+        const messages: Record<number, string> = {
+          1: 'Location permission denied. Please enable location access in your browser settings.',
+          2: 'Location unavailable. Please check your GPS or try searching by city.',
+          3: 'Location request timed out. Please try again or search by city.',
         }
-        reject(new Error(message))
+        reject(new Error(messages[error.code] || error.message))
       },
       {
-        timeout:            15000,  // longer for mobile networks
-        enableHighAccuracy: false,  // true causes timeouts on many Android devices
-        maximumAge:         60000,  // accept cached position up to 1 min old
+        enableHighAccuracy: false, // Set to false for faster response on mobile
+        timeout: 15000,            // Increase timeout for mobile
+        maximumAge: 60000          // Allow cached positions up to 1 minute
       }
     )
   })

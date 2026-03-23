@@ -102,17 +102,32 @@ export default function HomePage() {
   }
 
   const handleUseLocation = async () => {
-    const { coords, error } = await getLocation()
+    // Disable button immediately to prevent double-taps on mobile
+    if (geoLoading) return
+    
+    const result = await getLocation()
 
-    if (!coords) {
-      toast.error(error ?? 'Could not get your location. Try searching by city instead.')
+    if (!result.coords) {
+      // Always show error - mobile often fails silently
+      const errorMsg = result.error || 'Could not get your location. Try searching by city instead.'
+      toast.error(errorMsg)
       return
     }
 
-    dispatch(setUserLocation(coords))
-    dispatch(setResults(attachDistances(featured, coords)))
+    // Use a microtask to ensure state updates flush before navigation
+    // This is crucial for mobile browsers
+    dispatch(setUserLocation(result.coords))
+    dispatch(setResults(attachDistances(featured, result.coords)))
     dispatch(setHasSearched(true))
-    navigate('/search')
+    
+    // Small delay on mobile to ensure Redux state updates complete
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    if (isMobile) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    
+    // Use replace: false to ensure navigation stack works correctly on mobile
+    navigate('/search', { replace: false })
   }
 
   const handleServiceFilter = (service: string) => {
