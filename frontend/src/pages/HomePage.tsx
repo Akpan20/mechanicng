@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -80,16 +80,22 @@ type StatItem =
 export default function HomePage() {
   const [city, setCity]       = useState('')
   const [focused, setFocused] = useState(false)
+  const [isLocating, setIsLocating] = useState(false)
   const navigate              = useNavigate()
   const dispatch              = useAppDispatch()
 
   const { data: featured = [] }              = useMechanics()
   const featuredPro = featured.filter(m => m.plan === 'pro').slice(0, 3)
-  const { loading: geoLoading, getLocation } = useGeolocation()
+  const { getLocation } = useGeolocation()
 
+  // Check if geolocation is supported
+  const isGeolocationSupported = typeof navigator !== 'undefined' && 'geolocation' in navigator
 
   const handleCitySearch = () => {
-    if (!city.trim()) return
+    if (!city.trim()) {
+      toast.error('Please enter a city or area')
+      return
+    }
     dispatch(setQuery(city))
     dispatch(setResults(
       featured.filter(m =>
@@ -101,35 +107,76 @@ export default function HomePage() {
     navigate('/search')
   }
 
-  const handleUseLocation = async () => {
-    const debug = (msg: string) => {
-      const div = document.createElement('div');
-      div.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#000;color:#0f0;padding:10px;z-index:9999;border-radius:8px;';
-      div.textContent = `DEBUG: ${msg}`;
-      document.body.appendChild(div);
-      setTimeout(() => div.remove(), 5000);
-    };
-
-    debug('Button clicked');
-    
-    const result = await getLocation();
-    debug(`Geo result: ${JSON.stringify(result)}`);
-    
-    if (!result.coords) {
-      debug(`Error: ${result.error}`);
-      toast.error(result.error || 'Could not get location');
-      return;
+  const handleUseLocation = useCallback(async () => {
+    // Check if geolocation is supported
+    if (!isGeolocationSupported) {
+      toast.error('Geolocation is not supported by your browser')
+      return
     }
 
-    debug('Dispatching state...');
-    dispatch(setUserLocation(result.coords));
-    dispatch(setResults(attachDistances(featured, result.coords)));
-    dispatch(setHasSearched(true));
-    
-    debug('Navigating...');
-    navigate('/search');
-    debug('Navigate called');
-  };
+    // Check for secure context (HTTPS/localhost)
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      toast.error('Location access requires a secure connection (HTTPS)')
+      return
+    }
+
+    setIsLocating(true)
+
+    try {
+      // Try to get permission status first (if Permissions API is supported)
+      if ('permissions' in navigator) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ 
+            name: 'geolocation' as const
+          })
+          
+          if (permissionStatus.state === 'denied') {
+            toast.error('Location permission denied. Please enable location access in your browser settings.')
+            setIsLocating(false)
+            return
+          }
+          
+          // Note: iOS Safari may show 'prompt' even when permission was previously granted
+          // We proceed anyway and let getCurrentPosition handle it
+        } catch (_err) {
+          // Permissions API may not support geolocation on some browsers, continue anyway
+          console.log('Permissions API query failed, proceeding with getCurrentPosition')
+        }
+      }
+
+      const result = await getLocation()
+
+      if (!result.coords) {
+        // Handle specific error cases
+        if (result.error) {
+          if (result.error.includes('denied') || result.error.includes('Denied')) {
+            toast.error('Location access denied. Please allow location access in your browser settings.')
+          } else if (result.error.includes('timeout') || result.error.includes('Timeout')) {
+            toast.error('Location request timed out. Please try again or enter your city manually.')
+          } else if (result.error.includes('unavailable') || result.error.includes('Unavailable')) {
+            toast.error('Location information unavailable. Please check your GPS or enter your city manually.')
+          } else {
+            toast.error(result.error)
+          }
+        } else {
+          toast.error('Could not get your location')
+        }
+        setIsLocating(false)
+        return
+      }
+
+      dispatch(setUserLocation(result.coords))
+      dispatch(setResults(attachDistances(featured, result.coords)))
+      dispatch(setHasSearched(true))
+      navigate('/search')
+      toast.success('Location found! Showing nearby mechanics.')
+    } catch (err) {
+      console.error('Location error:', err)
+      toast.error('An error occurred while getting your location')
+    } finally {
+      setIsLocating(false)
+    }
+  }, [dispatch, featured, getLocation, isGeolocationSupported, navigate])
 
   const handleServiceFilter = (service: string) => {
     dispatch(setQuery(service))
@@ -251,13 +298,33 @@ export default function HomePage() {
                 <div className="flex-1 h-px bg-gray-800" />
               </div>
 
-              <button onClick={handleUseLocation} disabled={geoLoading}
-                className="btn-outline w-full flex items-center justify-center gap-2 text-sm">
-                {geoLoading
-                  ? <><span className="loader w-4 h-4" /> Getting location…</>
-                  : <><span>📍</span></>
-                }
+              {/* FIXED: Location button with proper text and loading state */}
+              <button 
+                onClick={handleUseLocation} 
+                disabled={isLocating || !isGeolocationSupported}
+                className={`btn-outline w-full flex items-center justify-center gap-2 text-sm transition-all duration-200 ${
+                  !isGeolocationSupported ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLocating ? (
+                  <>
+                    <span className="loader w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>Getting location…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>📍</span>
+                    <span>Use my current location</span>
+                  </>
+                )}
               </button>
+              
+              {/* Helper text for mobile users */}
+              {!isGeolocationSupported && (
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Location services not available in your browser
+                </p>
+              )}
             </div>
           </Reveal>
 
