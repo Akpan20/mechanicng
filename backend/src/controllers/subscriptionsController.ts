@@ -11,7 +11,10 @@ export async function getSubscription(req: AuthRequest, res: Response): Promise<
       status: 'active',
     }).lean()
 
-    if (!sub) { res.status(404).json({ error: 'No active subscription' }); return }
+    if (!sub) {
+      res.status(404).json({ error: 'No active subscription' })
+      return
+    }
     res.json({ ...sub, id: sub._id })
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
@@ -22,13 +25,14 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
   try {
     // Verify Paystack signature
     const secret = process.env.PAYSTACK_SECRET_KEY ?? ''
-    const hash   = crypto
+    const hash = crypto
       .createHmac('sha512', secret)
       .update(JSON.stringify(req.body))
       .digest('hex')
 
     if (hash !== req.headers['x-paystack-signature']) {
-      res.status(401).json({ error: 'Invalid signature' }); return
+      res.status(401).json({ error: 'Invalid signature' })
+      return
     }
 
     const { event, data } = req.body as {
@@ -37,12 +41,16 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
         subscription_code?: string
         metadata?: { mechanic_id?: string; plan?: string }
         customer?: { customer_code?: string }
+        amount?: number
+        plan?: { name?: string }
+        reference?: string
       }
     }
 
+    // Handle subscription creation or payment success
     if (event === 'subscription.create' || event === 'charge.success') {
       const mechanicId = data.metadata?.mechanic_id
-      const plan       = data.metadata?.plan ?? 'standard'
+      const plan = data.metadata?.plan ?? 'standard'
 
       if (mechanicId) {
         // Deactivate any previous subscriptions for this mechanic
@@ -54,17 +62,18 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
         await Subscription.create({
           mechanicId,
           plan,
-          status:                   'active',
+          status: 'active',
           paystackSubscriptionCode: data.subscription_code,
-          paystackCustomerCode:     data.customer?.customer_code,
-          currentPeriodStart:       new Date(),
-          currentPeriodEnd:         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          paystackCustomerCode: data.customer?.customer_code,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         })
 
         await Mechanic.findByIdAndUpdate(mechanicId, { plan })
       }
     }
 
+    // Handle subscription disable (cancelled)
     if (event === 'subscription.disable') {
       await Subscription.findOneAndUpdate(
         { paystackSubscriptionCode: data.subscription_code },
@@ -75,6 +84,7 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
       if (sub) await Mechanic.findByIdAndUpdate(sub.mechanicId, { plan: 'free' })
     }
 
+    // Handle payment failure
     if (event === 'invoice.payment_failed') {
       await Subscription.findOneAndUpdate(
         { paystackSubscriptionCode: data.subscription_code },
@@ -87,65 +97,5 @@ export async function paystackWebhook(req: Request, res: Response): Promise<void
     // Always return 200 to Paystack to prevent retries on our own errors
     console.error('Webhook error:', (err as Error).message)
     res.json({ received: true })
-  }
-
-  // After confirming payment succeeded
-const mechanic = await Mechanic.findOne({ userId: user._id })
-const referredByCode = user.referredBy
-
-if (referredByCode) {
-  const affiliate = await Affiliate.findOne({ code: referredByCode, status: 'active' })
-  if (affiliate) {
-    const amountNGN  = event.data.amount / 100  // Paystack sends kobo
-    const commission = Math.round(amountNGN * affiliate.commissionRate)
-
-    await Referral.create({
-      affiliateId:    affiliate._id,
-      referredUserId: user._id,
-      mechanicId:     mechanic?._id,
-      plan:           event.data.plan?.name ?? 'unknown',
-      amountPaid:     amountNGN,
-      commission,
-      paystackRef:    event.data.reference,
-      status:         'credited',
-    })
-
-    await Affiliate.findByIdAndUpdate(affiliate._id, {
-      $inc: {
-        totalEarnings:  commission,
-        pendingPayout:  commission,
-        totalReferrals: 1,
-      }
-    })
-  }
-  
-  const mechanic = await Mechanic.findOne({ userId: user._id })
-  const referredByCode = user.referredBy
-
-  if (referredByCode) {
-    const affiliate = await Affiliate.findOne({ code: referredByCode, status: 'active' })
-    if (affiliate) {
-      const amountNGN  = event.data.amount / 100  // Paystack sends kobo
-      const commission = Math.round(amountNGN * affiliate.commissionRate)
-
-      await Referral.create({
-        affiliateId:    affiliate._id,
-        referredUserId: user._id,
-        mechanicId:     mechanic?._id,
-        plan:           event.data.plan?.name ?? 'unknown',
-        amountPaid:     amountNGN,
-        commission,
-        paystackRef:    event.data.reference,
-        status:         'credited',
-      })
-
-      await Affiliate.findByIdAndUpdate(affiliate._id, {
-        $inc: {
-          totalEarnings:  commission,
-          pendingPayout:  commission,
-          totalReferrals: 1,
-        }
-      })
-    }
   }
 }

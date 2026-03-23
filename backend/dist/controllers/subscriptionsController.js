@@ -37,6 +37,7 @@ async function paystackWebhook(req, res) {
             return;
         }
         const { event, data } = req.body;
+        // Handle subscription creation or payment success
         if (event === 'subscription.create' || event === 'charge.success') {
             const mechanicId = data.metadata?.mechanic_id;
             const plan = data.metadata?.plan ?? 'standard';
@@ -55,6 +56,7 @@ async function paystackWebhook(req, res) {
                 await Mechanic_1.Mechanic.findByIdAndUpdate(mechanicId, { plan });
             }
         }
+        // Handle subscription disable (cancelled)
         if (event === 'subscription.disable') {
             await Subscription_1.Subscription.findOneAndUpdate({ paystackSubscriptionCode: data.subscription_code }, { status: 'cancelled' });
             // Downgrade mechanic to free
@@ -62,6 +64,7 @@ async function paystackWebhook(req, res) {
             if (sub)
                 await Mechanic_1.Mechanic.findByIdAndUpdate(sub.mechanicId, { plan: 'free' });
         }
+        // Handle payment failure
         if (event === 'invoice.payment_failed') {
             await Subscription_1.Subscription.findOneAndUpdate({ paystackSubscriptionCode: data.subscription_code }, { status: 'expired' });
         }

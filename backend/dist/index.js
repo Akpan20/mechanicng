@@ -19,6 +19,7 @@ const quotes_1 = __importDefault(require("./routes/quotes"));
 const subscriptions_1 = __importDefault(require("./routes/subscriptions"));
 const ads_1 = __importDefault(require("./routes/ads"));
 const reviews_1 = __importDefault(require("./routes/reviews"));
+const affiliates_1 = __importDefault(require("./routes/affiliates"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
 // ─── Trust proxy (required on Render) ────────────────────────
@@ -58,6 +59,7 @@ app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined'
 // Must come BEFORE any JSON parser
 app.use('/api/subscriptions/webhook', express_1.default.raw({ type: 'application/json' }));
 // ─── Body parsers ─────────────────────────────────────────────
+// Apply specific limits to different routes
 app.use('/api/auth', express_1.default.json({ limit: '10kb' })); // tight limit on auth
 app.use('/api/mechanics', express_1.default.json({ limit: '1mb' })); // allows photo URLs
 app.use(express_1.default.json({ limit: '100kb' })); // default for everything else
@@ -84,14 +86,16 @@ const apiLimiter = (0, express_rate_limit_1.default)({
     standardHeaders: true,
     legacyHeaders: false,
 });
-// Specific auth routes first, then global API limiter
+// Apply auth-specific limiters before the global API limiter
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', authLimiter);
 app.use('/api/auth/reset', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
+// Global rate limiter for all /api endpoints (applies to routes registered after this)
 app.use('/api', apiLimiter);
 // ─── Routes ───────────────────────────────────────────────────
+// All routes after this point are covered by the global rate limiter
 app.use('/api/auth', auth_1.default);
 app.use('/api/mechanics', mechanics_1.default);
 app.use('/api/admin', adminMechanics_1.default);
@@ -99,6 +103,7 @@ app.use('/api/quotes', quotes_1.default);
 app.use('/api/subscriptions', subscriptions_1.default);
 app.use('/api/ads', ads_1.default);
 app.use('/api/reviews', reviews_1.default);
+app.use('/api/affiliates', affiliates_1.default); // moved after the global limiter
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 // ─── Error handler (must be last) ────────────────────────────
 app.use(errorHandler_1.errorHandler);

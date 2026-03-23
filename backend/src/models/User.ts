@@ -67,10 +67,12 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
     toJSON: {
       transform: (_, ret) => {
-        delete ret.password
-        delete ret.resetToken
-        delete ret.resetTokenExpiry
-        return ret
+        // Cast to any to allow deletion of required fields
+        const obj = ret as any
+        delete obj.password
+        delete obj.resetToken
+        delete obj.resetTokenExpiry
+        return obj
       },
     },
   }

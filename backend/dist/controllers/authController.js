@@ -12,15 +12,17 @@ exports.resetPassword = resetPassword;
 // src/controllers/authController.ts
 const crypto_1 = __importDefault(require("crypto"));
 const zod_1 = require("zod");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const User_1 = require("../models/User");
 const jwt_1 = require("../lib/jwt");
-const nodemailer_1 = __importDefault(require("nodemailer"));
 // ─── Schemas ──────────────────────────────────────────────────
 const signupSchema = zod_1.z.object({
     email: zod_1.z.string().email().max(254).toLowerCase(),
     password: zod_1.z.string().min(8, 'Password must be at least 8 characters').max(128),
     fullName: zod_1.z.string().min(2, 'Full name required').max(100),
     role: zod_1.z.enum(['user', 'mechanic']).default('user'),
+    ref: zod_1.z.string().max(20).optional(),
 });
 const loginSchema = zod_1.z.object({
     email: zod_1.z.string().email().max(254).toLowerCase(),
@@ -64,13 +66,18 @@ const transporter = nodemailer_1.default.createTransport({
 async function signup(req, res) {
     try {
         const body = signupSchema.parse(req.body);
+        const { ref, ...userData } = body; // extract referral code
         const exists = await User_1.User.findOne({ email: body.email });
         if (exists) {
             // Generic message — don't confirm whether email exists
             res.status(409).json({ error: 'Unable to create account with these details' });
             return;
         }
-        const user = await User_1.User.create(body);
+        // Include referral code if provided
+        const user = await User_1.User.create({
+            ...body,
+            referredBy: ref ?? null,
+        });
         const token = (0, jwt_1.signToken)({ userId: user._id.toString(), email: user.email, role: user.role });
         res.status(201).json({ token, user: serializeUser(user) });
     }
@@ -225,7 +232,6 @@ async function resetPassword(req, res) {
 // ─── Timing attack dummy ──────────────────────────────────────
 // Runs a bcrypt compare against a fake hash when user is not found
 // so response time is identical whether the email exists or not
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const DUMMY_HASH = '$2a$12$dummyhashfortimingattackpreventiononlyxxxxxxxxxxxxxxxx';
 async function bcryptDummy() {
     await bcryptjs_1.default.compare('dummy', DUMMY_HASH);

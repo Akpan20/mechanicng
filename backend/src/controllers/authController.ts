@@ -2,10 +2,11 @@
 import crypto from 'crypto'
 import { Request, Response } from 'express'
 import { z } from 'zod'
+import bcrypt from 'bcryptjs'
+import nodemailer from 'nodemailer'
 import { User } from '../models/User'
 import { signToken } from '../lib/jwt'
 import { AuthRequest } from '../middleware/auth'
-import nodemailer from 'nodemailer'
 
 // ─── Schemas ──────────────────────────────────────────────────
 
@@ -68,8 +69,7 @@ const transporter = nodemailer.createTransport({
 export async function signup(req: Request, res: Response): Promise<void> {
   try {
     const body = signupSchema.parse(req.body)
-    const { ref, ...userData } = body  // extract referral code
-    
+    const { ref, ...userData } = body // extract referral code
 
     const exists = await User.findOne({ email: body.email })
     if (exists) {
@@ -78,12 +78,19 @@ export async function signup(req: Request, res: Response): Promise<void> {
       return
     }
 
-    const user  = await User.create(body)
-    const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role })
+    // Include referral code if provided
+    const user = await User.create({
+      ...body,
+      referredBy: ref ?? null,
+    })
 
+    const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role })
     res.status(201).json({ token, user: serializeUser(user) })
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors })
+      return
+    }
     console.error('signup error:', err)
     res.status(500).json({ error: 'Failed to create account' })
   }
@@ -109,7 +116,10 @@ export async function login(req: Request, res: Response): Promise<void> {
     const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role })
     res.json({ token, user: serializeUser(user) })
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors })
+      return
+    }
     console.error('login error:', err)
     res.status(500).json({ error: 'Login failed' })
   }
@@ -118,7 +128,10 @@ export async function login(req: Request, res: Response): Promise<void> {
 export async function getMe(req: AuthRequest, res: Response): Promise<void> {
   try {
     const user = await User.findById(req.user!.userId)
-    if (!user) { res.status(404).json({ error: 'User not found' }); return }
+    if (!user) {
+      res.status(404).json({ error: 'User not found' })
+      return
+    }
     res.json(serializeUser(user))
   } catch (err) {
     console.error('getMe error:', err)
@@ -129,15 +142,21 @@ export async function getMe(req: AuthRequest, res: Response): Promise<void> {
 export async function updateMe(req: AuthRequest, res: Response): Promise<void> {
   try {
     const updates = updateProfileSchema.parse(req.body)
-    const user    = await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       req.user!.userId,
       { $set: updates },
       { new: true, runValidators: true }
     )
-    if (!user) { res.status(404).json({ error: 'User not found' }); return }
+    if (!user) {
+      res.status(404).json({ error: 'User not found' })
+      return
+    }
     res.json(serializeUser(user))
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors })
+      return
+    }
     console.error('updateMe error:', err)
     res.status(500).json({ error: 'Failed to update profile' })
   }
@@ -156,10 +175,10 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     const GENERIC = 'If that email is registered, a reset link has been sent'
 
     if (user) {
-      const rawToken    = crypto.randomBytes(32).toString('hex')
+      const rawToken = crypto.randomBytes(32).toString('hex')
       const hashedToken = hashToken(rawToken)
 
-      user.resetToken       = hashedToken
+      user.resetToken = hashedToken
       user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
       await user.save({ validateBeforeSave: false })
 
@@ -167,8 +186,8 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
 
       try {
         await transporter.sendMail({
-          from:    process.env.SMTP_FROM,
-          to:      user.email,
+          from: process.env.SMTP_FROM,
+          to: user.email,
           subject: 'MechanicNG — Password Reset',
           html: `
             <p>Hi ${user.fullName},</p>
@@ -182,7 +201,7 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
         // Don't leak mail errors to the client — just log them
         console.error('Password reset email failed:', mailErr)
         // Clear the token so it can be retried
-        user.resetToken       = undefined
+        user.resetToken = undefined
         user.resetTokenExpiry = undefined
         await user.save({ validateBeforeSave: false })
         res.status(500).json({ error: 'Failed to send reset email' })
@@ -192,12 +211,15 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
 
     res.json({ message: GENERIC })
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors })
+      return
+    }
     console.error('forgotPassword error:', err)
     res.status(500).json({ error: 'Failed to process request' })
   }
 }
-referredBy: ref ?? null,
+
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   try {
     const { token, password } = resetPasswordSchema.parse(req.body)
@@ -205,7 +227,7 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     const hashedToken = hashToken(token)
 
     const user = await User.findOne({
-      resetToken:       hashedToken,
+      resetToken: hashedToken,
       resetTokenExpiry: { $gt: new Date() }, // not expired
     }).select('+password +resetToken +resetTokenExpiry')
 
@@ -215,16 +237,19 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     }
 
     // Set new password and clear reset token — single use
-    user.password          = password
-    user.resetToken        = undefined
-    user.resetTokenExpiry  = undefined
+    user.password = password
+    user.resetToken = undefined
+    user.resetTokenExpiry = undefined
     await user.save()
 
     // Issue a new login token so user is logged in immediately
     const authToken = signToken({ userId: user._id.toString(), email: user.email, role: user.role })
     res.json({ message: 'Password reset successful', token: authToken, user: serializeUser(user) })
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: err.errors }); return }
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors })
+      return
+    }
     console.error('resetPassword error:', err)
     res.status(500).json({ error: 'Failed to reset password' })
   }
@@ -233,7 +258,6 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
 // ─── Timing attack dummy ──────────────────────────────────────
 // Runs a bcrypt compare against a fake hash when user is not found
 // so response time is identical whether the email exists or not
-import bcrypt from 'bcryptjs'
 const DUMMY_HASH = '$2a$12$dummyhashfortimingattackpreventiononlyxxxxxxxxxxxxxxxx'
 async function bcryptDummy(): Promise<boolean> {
   await bcrypt.compare('dummy', DUMMY_HASH)
