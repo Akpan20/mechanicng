@@ -12,7 +12,9 @@ interface BaseLayoutProps { children: React.ReactNode; navLinks: NavLink[] }
 
 // Default Open Graph image – replace with your actual image URL.
 // It is best to store this in an environment variable, e.g. process.env.VITE_DEFAULT_OG_IMAGE
-const DEFAULT_OG_IMAGE = 'https://mechanicng.com/og-image.jpg' // <-- UPDATE THIS
+const DEFAULT_OG_IMAGE = 'https://mechanicng-frontend.onrender.com/og-image.jpg' // <-- UPDATE THIS
+const DEFAULT_OG_IMAGE_WIDTH = '1200'    // adjust to your image dimensions
+const DEFAULT_OG_IMAGE_HEIGHT = '630'    // adjust to your image dimensions
 
 function isActive(to: string, match: string | undefined, pathname: string) {
   if (match) return pathname.startsWith(match)
