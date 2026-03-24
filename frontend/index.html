@@ -4,71 +4,69 @@
   <head>
     <meta charset="UTF-8" />
 
-```
-<!-- Theme initialization (prevents flash of wrong theme) -->
-<script>
-  (function () {
-    try {
-      const saved = localStorage.getItem('theme') || 'system';
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    <!-- Theme initialization (prevents flash of wrong theme) -->
+    <script>
+      (function () {
+        try {
+          const saved = localStorage.getItem('theme') || 'system';
+          const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-      const theme = saved === 'system'
-        ? (systemDark ? 'dark' : 'light')
-        : saved;
+          const theme = saved === 'system'
+            ? (systemDark ? 'dark' : 'light')
+            : saved;
 
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      }
-    } catch (e) {}
-  })();
-</script>
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
 
-<!-- Viewport -->
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Primary Meta -->
-<title>MechanicNG – Find Trusted Mechanics in Nigeria</title>
-<meta name="description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-<meta name="robots" content="index, follow" />
-<link rel="canonical" href="https://mechanicng.com" />
+    <!-- Primary Meta -->
+    <title>MechanicNG – Find Trusted Mechanics in Nigeria</title>
+    <meta name="description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://mechanicng.com" />
 
-<!-- Theme color (updated dynamically in app) -->
-<meta name="theme-color" content="#f97316" />
+    <!-- Theme color (updated dynamically in app) -->
+    <meta name="theme-color" content="#f97316" />
 
-<!-- Open Graph -->
-<meta property="og:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
-<meta property="og:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-<meta property="og:image" content="https://mechanicng-frontend.onrender.com/og-image.jpg" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:image:type" content="image/jpeg" />
-<meta property="og:image:alt" content="MechanicNG platform preview" />
-<meta property="og:url" content="https://mechanicng.com" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="MechanicNG" />
-<meta property="fb:app_id" content="929246396743292" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
+    <meta property="og:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
+    <meta property="og:image" content="https://mechanicng-frontend.onrender.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="MechanicNG platform preview" />
+    <meta property="og:url" content="https://mechanicng.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MechanicNG" />
+    <meta property="fb:app_id" content="929246396743292" />
 
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
-<meta name="twitter:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
-<meta name="twitter:image" content="https://mechanicng-frontend.onrender.com/og-image.jpg" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MechanicNG – Find Trusted Mechanics in Nigeria" />
+    <meta name="twitter:description" content="Connect with reliable mechanics, request quotes, and grow your automotive business." />
+    <meta name="twitter:image" content="https://mechanicng-frontend.onrender.com/og-image.jpg" />
 
-<!-- Icons -->
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
-<link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-<!-- PWA Manifest -->
-<link rel="manifest" href="/manifest.webmanifest" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
 
-<!-- AdSense (loads globally; optional to defer to components) -->
-<script async
-  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1801890878381766"
-  crossorigin="anonymous">
-</script>
-```
+    <!-- AdSense (loads globally; optional to defer to components) -->
+    <script async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1801890878381766"
+      crossorigin="anonymous">
+    </script>
 
   </head>
 
@@ -78,13 +76,9 @@
         This application requires JavaScript to run properly.
       </div>
     </noscript>
+    <div id="root"></div>
 
-```
-<div id="root"></div>
-
-<!-- App entry -->
-<script type="module" src="/src/main.tsx"></script>
-```
-
+    <!-- App entry -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
