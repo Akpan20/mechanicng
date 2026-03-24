@@ -6,6 +6,11 @@ const router = Router();
 
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
+    // Check if user is attached (should be by middleware)
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const { limit = 50, since } = req.query;
     const userId = req.user._id;
 
@@ -28,6 +33,10 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 
 router.patch('/:id/read', authenticate, async (req: AuthRequest, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const { id } = req.params;
     const userId = req.user._id;
 
@@ -50,6 +59,10 @@ router.patch('/:id/read', authenticate, async (req: AuthRequest, res) => {
 
 router.patch('/read-all', authenticate, async (req: AuthRequest, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const userId = req.user._id;
 
     await Notification.updateMany(

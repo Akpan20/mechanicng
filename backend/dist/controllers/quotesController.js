@@ -22,13 +22,12 @@ async function submitQuote(req, res) {
     try {
         const body = createQuoteSchema.parse(req.body);
         const quote = await Quote_1.Quote.create({ ...body, status: 'pending' });
-        // 👇 Notify the mechanic about the new quote
+        // Notify the mechanic
         try {
-            // Find the mechanic document to get the userId (the account owner)
             const mechanic = await Mechanic_1.Mechanic.findById(body.mechanicId).select('userId name');
             if (mechanic && mechanic.userId) {
                 await (0, notificationService_1.createNotification)({
-                    userId: mechanic.userId,
+                    userId: mechanic.userId.toString(),
                     type: 'info',
                     title: 'New Quote Request',
                     message: `You have a new quote request from ${body.customerName} for "${body.service}".`,
@@ -37,7 +36,6 @@ async function submitQuote(req, res) {
             }
         }
         catch (notifErr) {
-            // Log but don't block the main response
             console.error('Failed to send notification:', notifErr);
         }
         res.status(201).json({ ...quote.toObject(), id: quote._id });
@@ -69,22 +67,26 @@ async function updateQuoteStatus(req, res) {
             res.status(404).json({ error: 'Quote not found' });
             return;
         }
-        // 👇 Optionally notify the customer when status changes
+        // Optional: notify customer. This requires mapping email to user ID.
+        // We'll skip for now to avoid errors. Uncomment when user lookup is implemented.
+        /*
         try {
-            // You might want to store customerEmail in the quote and notify them
-            if (quote.customerEmail) {
-                await (0, notificationService_1.createNotification)({
-                    userId: quote.customerEmail, // This assumes you have a way to map email to user ID; adjust as needed
-                    type: status === 'responded' ? 'success' : 'info',
-                    title: 'Quote Status Updated',
-                    message: `Your quote for "${quote.service}" is now ${status}.`,
-                    link: `/quotes/${quote._id}`,
-                });
+          if (quote.customerEmail) {
+            const user = await User.findOne({ email: quote.customerEmail }).select('_id');
+            if (user) {
+              await createNotification({
+                userId: user._id.toString(),
+                type: status === 'responded' ? 'success' : 'info',
+                title: 'Quote Status Updated',
+                message: `Your quote for "${quote.service}" is now ${status}.`,
+                link: `/quotes/${quote._id}`,
+              });
             }
+          }
+        } catch (notifErr) {
+          console.error('Failed to send customer notification:', notifErr);
         }
-        catch (notifErr) {
-            console.error('Failed to send customer notification:', notifErr);
-        }
+        */
         res.json({ success: true, status: quote.status });
     }
     catch (err) {

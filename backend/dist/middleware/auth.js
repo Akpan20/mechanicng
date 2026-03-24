@@ -12,9 +12,15 @@ function authenticate(req, res, next) {
     }
     try {
         const payload = (0, jwt_1.verifyToken)(header.slice(7));
+        // Use userId or id (depending on your token structure)
+        const userId = payload.userId || payload.id;
+        if (!userId) {
+            res.status(401).json({ error: 'Invalid token: missing user identifier' });
+            return;
+        }
         req.user = {
             ...payload,
-            _id: payload.id,
+            _id: userId, // set as string
         };
         next();
     }
