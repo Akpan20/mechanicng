@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */ // RequestInit and other globals are TypeScript types
+/* eslint-disable no-undef */
 
 import { store } from '@/store'
 import { logout } from '@/store/authSlice'
@@ -44,7 +44,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  get:    <T>(path: string)              => request<T>(path, { method: 'GET'    }),
+  // GET now accepts an optional params object
+  get: <T>(path: string, params?: Record<string, string>) => {
+    let url = path
+    if (params) {
+      const searchParams = new URLSearchParams(params)
+      url = `${path}?${searchParams.toString()}`
+    }
+    return request<T>(url, { method: 'GET' })
+  },
   post:   <T>(path: string, body: unknown) => request<T>(path, { method: 'POST',  body: JSON.stringify(body) }),
   patch:  <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(path: string)              => request<T>(path, { method: 'DELETE' }),

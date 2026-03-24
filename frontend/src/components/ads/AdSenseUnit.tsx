@@ -1,4 +1,3 @@
-// components/ads/AdSenseUnit.tsx
 import { useEffect, useRef } from 'react';
 
 interface Props {
@@ -41,14 +40,24 @@ export default function AdSenseUnit({
       try {
         (window as any).adsbygoogle = (window as any).adsbygoogle || [];
         (window as any).adsbygoogle.push({});
-      } catch (err) {
-        if (import.meta.env.DEV) console.error('[AdSense] push error:', err);
+      } catch (err: any) {
+        // Ignore the "already have ads" error; it's harmless
+        if (
+          err?.message?.includes('All \'ins\' elements') &&
+          err?.message?.includes('already have ads')
+        ) {
+          if (import.meta.env.DEV) {
+            console.info('[AdSense] Ad already filled, skipping duplicate push');
+          }
+        } else {
+          console.error('[AdSense] push error:', err);
+        }
       }
     };
 
     // Ensure DOM is ready
     Promise.resolve().then(pushAd);
-  }, [slotId]); // re‑run if slotId changes (uncommon)
+  }, [slotId]);
 
   // Dev placeholder when publisher ID missing
   if (!PUBLISHER_ID) {

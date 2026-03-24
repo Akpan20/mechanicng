@@ -16,6 +16,7 @@ import subscriptionsRoutes  from './routes/subscriptions'
 import adsRoutes            from './routes/ads'
 import reviewsRouter        from './routes/reviews'
 import affiliateRoutes      from './routes/affiliates'
+import notificationRoutes from './routes/notifications';
 
 const app  = express()
 const PORT = process.env.PORT ?? 4000
@@ -65,6 +66,7 @@ app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }))
 // ─── Body parsers ─────────────────────────────────────────────
 // Apply specific limits to different routes
 app.use('/api/auth',      express.json({ limit: '10kb'  })) // tight limit on auth
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/mechanics', express.json({ limit: '1mb'   })) // allows photo URLs
 app.use(express.json({ limit: '100kb' }))                   // default for everything else
 

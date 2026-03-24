@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -6,6 +6,7 @@ import { useMechanics } from '@/hooks/useMechanics'
 import { attachDistances } from '@/lib/geo'
 import MechanicCard from '@/components/mechanic/MechanicCard'
 import AdSlot from '@/components/ads/AdSlot'
+import Loader from '@/components/ui/Loader'
 import {
   SERVICES, NIGERIAN_CITIES,
   SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
@@ -78,19 +79,27 @@ type StatItem =
 
 // ── Component ─────────────────────────────────────────────────
 export default function HomePage() {
-  const [city, setCity]       = useState('')
+  const [city, setCity] = useState('')
   const [focused, setFocused] = useState(false)
   const [isLocating, setIsLocating] = useState(false)
-  const navigate              = useNavigate()
-  const dispatch              = useAppDispatch()
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
 
-  const { data: featured = [] }              = useMechanics()
-  const featuredPro = featured.filter(m => m.plan === 'pro').slice(0, 3)
+  // ── Mechanics data ───────────────────────────────────────────
+  const { data: featuredRaw, isLoading: mechanicsLoading, error: mechanicsError } = useMechanics()
+  const featured = useMemo(
+    () => (Array.isArray(featuredRaw) ? featuredRaw : []),
+    [featuredRaw]
+  )
+  const featuredPro = useMemo(
+    () => featured.filter(m => m.plan === 'pro').slice(0, 3),
+    [featured]
+  )
+
   const { getLocation } = useGeolocation()
-
-  // Check if geolocation is supported
   const isGeolocationSupported = typeof navigator !== 'undefined' && 'geolocation' in navigator
 
+  // ── Handlers ─────────────────────────────────────────────────
   const handleCitySearch = () => {
     if (!city.trim()) {
       toast.error('Please enter a city or area')
@@ -108,13 +117,11 @@ export default function HomePage() {
   }
 
   const handleUseLocation = useCallback(async () => {
-    // Check if geolocation is supported
     if (!isGeolocationSupported) {
       toast.error('Geolocation is not supported by your browser')
       return
     }
 
-    // Check for secure context (HTTPS/localhost)
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       toast.error('Location access requires a secure connection (HTTPS)')
       return
@@ -123,44 +130,25 @@ export default function HomePage() {
     setIsLocating(true)
 
     try {
-      // Try to get permission status first (if Permissions API is supported)
+      // Permissions API check (optional)
       if ('permissions' in navigator) {
         try {
-          const permissionStatus = await navigator.permissions.query({ 
-            name: 'geolocation' as const
-          })
-          
+          const permissionStatus = await navigator.permissions.query({ name: 'geolocation' as const })
           if (permissionStatus.state === 'denied') {
             toast.error('Location permission denied. Please enable location access in your browser settings.')
             setIsLocating(false)
             return
           }
-          
-          // Note: iOS Safari may show 'prompt' even when permission was previously granted
-          // We proceed anyway and let getCurrentPosition handle it
-        } catch (_err) {
-          // Permissions API may not support geolocation on some browsers, continue anyway
-          console.log('Permissions API query failed, proceeding with getCurrentPosition')
-        }
+        } catch (_err) { /* ignore */ }
       }
 
       const result = await getLocation()
 
       if (!result.coords) {
-        // Handle specific error cases
-        if (result.error) {
-          if (result.error.includes('denied') || result.error.includes('Denied')) {
-            toast.error('Location access denied. Please allow location access in your browser settings.')
-          } else if (result.error.includes('timeout') || result.error.includes('Timeout')) {
-            toast.error('Location request timed out. Please try again or enter your city manually.')
-          } else if (result.error.includes('unavailable') || result.error.includes('Unavailable')) {
-            toast.error('Location information unavailable. Please check your GPS or enter your city manually.')
-          } else {
-            toast.error(result.error)
-          }
-        } else {
-          toast.error('Could not get your location')
-        }
+        const errorMsg = result.error || 'Could not get your location'
+        if (errorMsg.includes('denied')) toast.error('Location access denied.')
+        else if (errorMsg.includes('timeout')) toast.error('Location request timed out. Please try again.')
+        else toast.error(errorMsg)
         setIsLocating(false)
         return
       }
@@ -185,12 +173,25 @@ export default function HomePage() {
     navigate('/search')
   }
 
+  // Stats (dependent on featured.length)
   const stats: StatItem[] = [
     { icon: '🔧', value: featured.length,    suffix: '+', label: 'Mechanics' },
     { icon: '🏙️', value: SITE_STATS.cities,  suffix: '+', label: 'Cities'    },
     { icon: '⭐', static: SITE_STATS.avgRating,            label: 'Avg Rating' },
     { icon: '✓',  value: SITE_STATS.verified, suffix: '%', label: 'Verified'   },
   ]
+
+  // ── Loading state ────────────────────────────────────────────
+  if (mechanicsLoading) {
+    return <Loader fullPage />
+  }
+
+  // Optional: show error if mechanics fetch failed
+  if (mechanicsError) {
+    // Log the error, but still show the page (fallback to empty array)
+    console.error('Failed to load mechanics:', mechanicsError)
+    // We can still render with empty featured array
+  }
 
   return (
     <>
@@ -298,7 +299,7 @@ export default function HomePage() {
                 <div className="flex-1 h-px bg-gray-800" />
               </div>
 
-              {/* FIXED: Location button with proper text and loading state */}
+              {/* Location button */}
               <button 
                 onClick={handleUseLocation} 
                 disabled={isLocating || !isGeolocationSupported}
@@ -319,7 +320,6 @@ export default function HomePage() {
                 )}
               </button>
               
-              {/* Helper text for mobile users */}
               {!isGeolocationSupported && (
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   Location services not available in your browser
@@ -392,7 +392,7 @@ export default function HomePage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          FEATURED MECHANICS
+          FEATURED MECHANICS (only if there are pro mechanics)
       ══════════════════════════════════════════════════════ */}
       {featuredPro.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-14">

@@ -8,6 +8,8 @@ import adsReducer    from './adsSlice'
 import mechanicReducer from './mechanicSlice'
 import reviewsReducer from './reviewsSlice'
 import themeReducer from './themeSlice'
+import notificationReducer from './notificationSlice'
+
 
 const authPersistConfig = {
   key:       'auth',
@@ -27,6 +29,7 @@ const rootReducer = combineReducers({
   mechanics: mechanicReducer,
   reviews:   reviewsReducer,
   theme:     themeReducer,
+  notifications: notificationReducer,
 })
 
 // ---- Root persistence config (only for slices that need it) ----

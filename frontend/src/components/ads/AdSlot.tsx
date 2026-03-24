@@ -1,5 +1,4 @@
-// components/AdSlot.tsx (rewritten)
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useAdSlot } from '@/hooks/useAds';
 import { recordImpression } from '@/lib/api/ads';
 import { BannerAd, CardAd, InlineAd, SpotlightAd } from './AdCreatives';
@@ -108,26 +107,28 @@ function AdCarousel({
   placement,
   cityContext,
 }: {
-  campaigns: ReturnType<typeof useAdSlot>['ads'];
+  campaigns: any[];
   placement: AdPlacement;
   cityContext?: string;
 }) {
+  const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
   const [current, setCurrent] = useState(0);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (campaigns.length <= 1) return;
+    if (safeCampaigns.length <= 1) return;
     const interval = setInterval(() => {
       setFading(true);
       setTimeout(() => {
-        setCurrent((c) => (c + 1) % campaigns.length);
+        setCurrent((c) => (c + 1) % safeCampaigns.length);
         setFading(false);
       }, 300);
     }, 6000);
     return () => clearInterval(interval);
-  }, [campaigns.length]);
+  }, [safeCampaigns.length]);
 
-  const campaign = campaigns[current];
+  const campaign = safeCampaigns[current];
+  if (!campaign) return null;
 
   return (
     <div
@@ -150,9 +151,9 @@ function AdCarousel({
         <SpotlightAd campaign={campaign} placement={placement} cityContext={cityContext} />
       )}
 
-      {campaigns.length > 1 && (
+      {safeCampaigns.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
-          {campaigns.map((_, i) => (
+          {safeCampaigns.map((_, i) => (
             <button
               key={i}
               onClick={() => {
@@ -183,14 +184,16 @@ function AdCarousel({
 // ── Main AdSlot ───────────────────────────────────────────────
 
 export default function AdSlot({ placement, cityContext, className = '', adsenseSlotId }: AdSlotProps) {
-  const { ads: campaigns = [], isLoading } = useAdSlot(placement, cityContext);
+  const { ads: rawAds = [], isLoading } = useAdSlot(placement, cityContext);
+  // ✅ Stabilize campaigns reference to avoid unnecessary effect re-runs
+  const campaigns = useMemo(() => (Array.isArray(rawAds) ? rawAds : []), [rawAds]);
   const impressionFired = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     campaigns.forEach((c) => {
-      if (!impressionFired.current.has(c.id)) {
+      if (c?.id && !impressionFired.current.has(c.id)) {
         impressionFired.current.add(c.id);
-        recordImpression(c.id);
+        recordImpression(c.id).catch(() => {});
       }
     });
   }, [campaigns]);
@@ -261,10 +264,10 @@ export function SearchResultsWithAds({
   cityContext,
   injectEvery = 5,
 }: SearchAdsProps) {
-  const { ads: campaigns = [] } = useAdSlot('search_inline', cityContext);
+  const { ads: rawAds = [] } = useAdSlot('search_inline', cityContext);
+  const campaigns = Array.isArray(rawAds) ? rawAds : [];
   const inlineSlotId = ADSENSE_SLOTS['search_inline'];
 
-  // Only consider AdSense if the slot ID is a valid number string
   const isValidAdSense = inlineSlotId && /^\d+$/.test(inlineSlotId);
 
   let adIndex = 0;
@@ -283,7 +286,6 @@ export function SearchResultsWithAds({
         );
         adIndex++;
       } else if (isValidAdSense) {
-        // Use the same format as defined for this placement
         const format = ADSENSE_FORMATS['search_inline'] ?? 'rectangle';
         result.push(
           <AnimatedAd key={`adsense-inline-${i}`} delay={100}>
