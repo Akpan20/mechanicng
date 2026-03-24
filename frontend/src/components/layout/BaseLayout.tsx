@@ -1,10 +1,10 @@
-// src/components/layout/BaseLayout.tsx
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { signOut } from '@/lib/api/auth'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { selectUser, selectProfile, selectIsAdmin, logout } from '@/store/authSlice'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface NavLink { to: string; label: string; match?: string }
 interface BaseLayoutProps { children: React.ReactNode; navLinks: NavLink[] }
@@ -93,6 +93,8 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
 
           {/* Desktop auth */}
           <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle /> {/* 🟢 Added toggle here */}
+            
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-400 truncate max-w-[140px]">
@@ -146,6 +148,7 @@ export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {
             </Link>
 
             <div className="pt-2 mt-2 border-t border-gray-800 space-y-2">
+              <ThemeToggle /> 
               {isAuthenticated ? (
                 <>
                   <div className="px-3 py-2 text-xs text-gray-500 truncate">
