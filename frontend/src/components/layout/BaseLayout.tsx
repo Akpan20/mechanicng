@@ -20,7 +20,7 @@ const FOR_MECHANICS  = [['/signup','Create Listing'],['/pricing','View Plans']] 
 const COMPANY_LINKS  = [
   ['/about','About'],['/contact','Contact'],
   ['/terms','Terms'],['/privacy','Privacy'],['/cookies','Cookies'],
-  ['/demo','Interactive Demo'],   // 👈 added demo link in footer
+  ['/demo','Interactive Demo'],
 ] as const
 
 export default function BaseLayout({ children, navLinks }: BaseLayoutProps) {

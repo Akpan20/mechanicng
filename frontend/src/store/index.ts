@@ -7,11 +7,12 @@ import quotesReducer from './quotesSlice'
 import adsReducer    from './adsSlice'
 import mechanicReducer from './mechanicSlice'
 import reviewsReducer from './reviewsSlice'
+import themeReducer from './themeSlice'
 
 const authPersistConfig = {
   key:       'auth',
   storage,
-  whitelist: ['user', 'token'],
+  whitelist: ['user', 'token', 'theme'],
   // blacklist: ['error', 'loading'], // optional, but whitelist is cleaner
 }
 
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   ads:       adsReducer,
   mechanics: mechanicReducer,
   reviews:   reviewsReducer,
+  theme:     themeReducer,
 })
 
 // ---- Root persistence config (only for slices that need it) ----
