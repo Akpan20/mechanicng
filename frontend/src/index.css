@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,14 +11,23 @@
     --color-surface-900: 13 13 22;
     --color-surface-800: 19 19 26;
   }
-  html { @apply scroll-smooth; }
+  html {
+    @apply scroll-smooth;
+  }
   body {
     @apply bg-surface-950 text-gray-100 font-sans antialiased;
-    background-color: #0a0a0f;
   }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #111; }
-  ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 3px; }
+  /* scrollbar styles remain unchanged */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #f97316;
+    border-radius: 3px;
+  }
 }
 
 @layer components {
@@ -54,6 +64,12 @@
   }
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide;
+  }
+}
+
+@layer utilities {
+  .shadow-glow-brand {
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
   }
 }
 
