@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline — MechanicNG</title>
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #111118;
+      --accent: #f97316;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      background: var(--card);
+      padding: 28px 22px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .icon {
+      font-size: 42px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .retry {
+      background: var(--accent);
+      color: white;
+    }
+
+    .home {
+      background: transparent;
+      border: 1px solid #2a2a35;
+      color: var(--text);
+    }
+
+    .tips {
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tips ul {
+      margin-top: 8px;
+      text-align: left;
+      padding-left: 18px;
+    }
+
+    .tips li {
+      margin-bottom: 6px;
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="container">
+    <div class="icon">🔧</div>
+
+```
+<h1>You’re offline</h1>
+
+<p>
+  We can’t reach MechanicNG right now. This usually means your internet
+  connection is unstable or temporarily unavailable.
+</p>
+
+<div class="actions">
+  <button class="retry" onclick="retry()">Try Again</button>
+  <button class="home" onclick="goHome()">Go to Home</button>
+</div>
+
+<div class="tips">
+  <strong>Quick tips:</strong>
+  <ul>
+    <li>Check your mobile data or Wi-Fi connection</li>
+    <li>Move to an area with better signal</li>
+    <li>Wait a moment and retry</li>
+  </ul>
+</div>
+```
+
+  </div>
+
+  <script>
+    function retry() {
+      window.location.reload();
+    }
+
+    function goHome() {
+      window.location.href = "/";
+    }
+
+    // Optional: auto-retry when connection returns
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+
+</body>
+</html>
