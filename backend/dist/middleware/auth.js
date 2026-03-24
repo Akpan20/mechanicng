@@ -11,7 +11,11 @@ function authenticate(req, res, next) {
         return;
     }
     try {
-        req.user = (0, jwt_1.verifyToken)(header.slice(7));
+        const payload = (0, jwt_1.verifyToken)(header.slice(7));
+        req.user = {
+            ...payload,
+            _id: payload.id,
+        };
         next();
     }
     catch {

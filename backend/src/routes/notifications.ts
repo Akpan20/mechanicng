@@ -1,10 +1,10 @@
-import { Router } from 'express'
-import { Notification } from '../models/Notification'
-import { authenticate } from '../middleware/auth'
+import { Router } from 'express';
+import { Notification } from '../models/Notification';
+import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { limit = 50, since } = req.query;
     const userId = req.user._id;
@@ -26,8 +26,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /notifications/:id/read – mark one as read
-router.patch('/:id/read', authenticate, async (req, res) => {
+router.patch('/:id/read', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
@@ -49,8 +48,7 @@ router.patch('/:id/read', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /notifications/read-all – mark all unread as read
-router.patch('/read-all', authenticate, async (req, res) => {
+router.patch('/read-all', authenticate, async (req: AuthRequest, res) => {
   try {
     const userId = req.user._id;
 

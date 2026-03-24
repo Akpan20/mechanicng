@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JwtPayload } from '../lib/jwt';
 
 export interface AuthRequest extends Request {
-  user?: JwtPayload & { _id?: string };
+  user?: JwtPayload & { _id: string }; 
 }
 
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -13,9 +13,15 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
   try {
     const payload = verifyToken(header.slice(7));
+    // Use userId or id (depending on your token structure)
+    const userId = (payload as any).userId || (payload as any).id;
+    if (!userId) {
+      res.status(401).json({ error: 'Invalid token: missing user identifier' });
+      return;
+    }
     req.user = {
       ...payload,
-      _id: payload.id,
+      _id: userId, // set as string
     };
     next();
   } catch {

@@ -20,6 +20,7 @@ const subscriptions_1 = __importDefault(require("./routes/subscriptions"));
 const ads_1 = __importDefault(require("./routes/ads"));
 const reviews_1 = __importDefault(require("./routes/reviews"));
 const affiliates_1 = __importDefault(require("./routes/affiliates"));
+const notifications_1 = __importDefault(require("./routes/notifications"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 4000;
 // ─── Trust proxy (required on Render) ────────────────────────
@@ -61,6 +62,7 @@ app.use('/api/subscriptions/webhook', express_1.default.raw({ type: 'application
 // ─── Body parsers ─────────────────────────────────────────────
 // Apply specific limits to different routes
 app.use('/api/auth', express_1.default.json({ limit: '10kb' })); // tight limit on auth
+app.use('/api/notifications', notifications_1.default);
 app.use('/api/mechanics', express_1.default.json({ limit: '1mb' })); // allows photo URLs
 app.use(express_1.default.json({ limit: '100kb' })); // default for everything else
 // ─── NoSQL injection protection ───────────────────────────────

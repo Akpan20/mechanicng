@@ -193,7 +193,8 @@ export default function AdSlot({ placement, cityContext, className = '', adsense
     campaigns.forEach((c) => {
       if (c?.id && !impressionFired.current.has(c.id)) {
         impressionFired.current.add(c.id);
-        recordImpression(c.id).catch(() => {});
+        // ✅ Wrap in Promise.resolve to handle both void and Promise returns
+        Promise.resolve(recordImpression(c.id)).catch(() => {});
       }
     });
   }, [campaigns]);
