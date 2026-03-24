@@ -22,7 +22,7 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: true,
-      unique: true,
+      unique: true,      // ← this already creates the index; no need for schema.index({ email: 1 }) below
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address.'],
@@ -31,7 +31,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       minlength: 8,
-      select: false, // never returned by default
+      select: false,
     },
     fullName: {
       type: String,
@@ -56,7 +56,7 @@ const userSchema = new Schema<IUser>(
     },
     resetToken: {
       type: String,
-      select: false, // hashed token, never exposed
+      select: false,
     },
     resetTokenExpiry: {
       type: Date,
@@ -67,7 +67,6 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
     toJSON: {
       transform: (_, ret) => {
-        // Cast to any to allow deletion of required fields
         const obj = ret as any
         delete obj.password
         delete obj.resetToken
@@ -79,7 +78,7 @@ const userSchema = new Schema<IUser>(
 )
 
 // Indexes for performance
-userSchema.index({ email: 1 })
+// ✅ email index is already created by unique: true above — removed duplicate
 userSchema.index({ role: 1 })
 userSchema.index({ referredBy: 1 })
 
