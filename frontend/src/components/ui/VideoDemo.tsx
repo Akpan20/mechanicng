@@ -1,37 +1,36 @@
-import { Helmet } from 'react-helmet-async'
-import VideoDemo from '@/components/ui/VideoDemo'
+import { useState } from 'react'
+import ReactPlayer from 'react-player'
 
-export default function DemoPage() {
+interface VideoDemoProps {
+  url: string
+  poster?: string
+  title?: string
+  className?: string
+}
+
+export default function VideoDemo({ url, poster, title, className = '' }: VideoDemoProps) {
+  const [hasStarted, setHasStarted] = useState(false)
+
   return (
-    <>
-      <Helmet>
-        <title>Interactive Demo – MechanicNG</title>
-        <meta name="description" content="See how MechanicNG works in this interactive demo." />
-      </Helmet>
-
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-4xl font-extrabold mb-2">Interactive Demo</h1>
-        <p className="text-gray-400 mb-8">
-          Watch a short walkthrough of how to find mechanics, request quotes, and manage your listings.
-        </p>
-
-        <VideoDemo
-          url="https://www.youtube.com/watch?v=l-mG7LxpCn8"
-          poster="/images/poster.png"
-          title="MechanicNG Demo – 7 min"
-          className="mb-8"
-        />
-
-        <div className="bg-surface-800 rounded-xl p-6 border border-gray-800">
-          <h2 className="text-xl font-bold mb-3">What you'll see</h2>
-          <ul className="list-disc list-inside text-gray-300 space-y-2">
-            <li>Searching for mechanics by city or location</li>
-            <li>Viewing mechanic profiles and services</li>
-            <li>Sending a quote request</li>
-            <li>Managing your listing (for mechanics)</li>
-          </ul>
+    <div className={`relative rounded-2xl overflow-hidden bg-surface-900 shadow-xl ${className}`}>
+      <ReactPlayer
+        url={url}
+        controls
+        width="100%"
+        height="auto"
+        playing={hasStarted}
+        light={poster ? poster : true}
+        config={{
+          youtube: { playerVars: { modestbranding: 1, rel: 0 } },
+        }}
+        style={{ aspectRatio: '16/9' }}
+        onPlay={() => setHasStarted(true)}
+      />
+      {title && (
+        <div className="absolute bottom-4 left-4 text-white text-sm font-semibold bg-black/50 px-2 py-1 rounded pointer-events-none">
+          {title}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   )
 }
