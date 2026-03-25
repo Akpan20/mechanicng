@@ -27,6 +27,7 @@ export default function DemoPage() {
           url="https://www.youtube.com/watch?v=l-mG7LxpCn8"
           poster="/images/poster.png"
           title="MechanicNG Demo – 7 min"
+          className="w-full max-w-xl"
         />
       </div>
     </>

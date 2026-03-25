@@ -7,6 +7,7 @@ import { attachDistances } from '@/lib/geo'
 import MechanicCard from '@/components/mechanic/MechanicCard'
 import AdSlot from '@/components/ads/AdSlot'
 import Loader from '@/components/ui/Loader'
+import VideoDemo from '@/components/ui/VideoDemo'
 import {
   SERVICES, NIGERIAN_CITIES,
   SITE_STATS, BRAND_COLOR, HERO_GRADIENT, CTA_GRADIENT, BRAND_GRADIENT,
@@ -382,6 +383,31 @@ export default function HomePage() {
                 {s}
               </button>
             ))}
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          VIDEO DEMO
+      ══════════════════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <Reveal>
+          <p className="section-title mb-1 sm:mb-2">Watch in Action</p>
+          <h2 className="font-bold mb-3" style={{ fontSize: 'clamp(1.4rem, 5vw, 1.875rem)' }}>
+            See How MechanicNG Works
+          </h2>
+          <p className="text-gray-400 mb-6 max-w-2xl">
+            Not sure how to use the platform? Watch this short walkthrough to get started in minutes.
+          </p>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <div className="max-w-2xl">
+            <VideoDemo
+              url="https://www.youtube.com/embed/l-mG7LxpCn8"
+              poster="/images/poster.png"
+              title="MechanicNG Demo – 7 min"
+            />
           </div>
         </Reveal>
       </section>
