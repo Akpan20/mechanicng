@@ -20,6 +20,7 @@ const MECH_TABS: { id: MechanicStatus | 'all'; label: string }[] = [
   { id: 'approved',  label: '✅ Approved'  },
   { id: 'rejected',  label: '❌ Rejected'  },
   { id: 'suspended', label: '⛔ Suspended' },
+  { id: 'deleted',   label: '🗑️ Deleted'  },
   { id: 'all',       label: '📋 All'       },
 ]
 

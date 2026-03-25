@@ -93,7 +93,6 @@ export interface SearchFilters {
   minRating?: number
 }
 
-// Parameters for searching mechanics
 export interface MechanicsSearchParams {
   city?: string
   service?: string
