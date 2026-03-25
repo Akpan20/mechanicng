@@ -14,6 +14,7 @@ import { CampaignRow }       from '@/pages/admin/components/CampaignRow'
 import AdvertiserCard        from '@/pages/admin/components/AdvertiserCard'
 import { CampaignFormModal } from '@/pages/admin/components/CampaignFormModal'
 import AdvertiserFormModal   from '@/pages/admin/components/AdvertiserFormModal'
+import SendMessageModal      from '@/pages/admin/components/SendMessageModal' // 👈 NEW
 
 const MECH_TABS: { id: MechanicStatus | 'all'; label: string }[] = [
   { id: 'pending',   label: '⏳ Pending'   },
@@ -40,7 +41,7 @@ function getRegisteredDate(m: Mechanic): string {
 }
 
 export default function AdminPage() {
-  const [mainTab, setMainTab] = useState<'mechanics' | 'ads'>('mechanics')
+  const [mainTab, setMainTab] = useState<'mechanics' | 'ads' | 'messages'>('mechanics') // 👈 UPDATED
 
   // ── Mechanics ─────────────────────────────────────────────
   const [mechTab, setMechTab] = useState<MechanicStatus | 'all'>('all')
@@ -112,6 +113,9 @@ export default function AdminPage() {
     updateAdStatus(id, status).catch(() => {})
   }
 
+  // ── Messages ──────────────────────────────────────────────
+  const [showMessageModal, setShowMessageModal] = useState(false) // 👈 NEW
+
   return (
     <>
       <Helmet><title>Admin Panel – MechanicNG</title></Helmet>
@@ -126,6 +130,7 @@ export default function AdminPage() {
           {[
             { id: 'mechanics', label: '🔧 Mechanics',   badge: counts.pending },
             { id: 'ads',       label: '📢 Advertising', badge: null           },
+            { id: 'messages',  label: '📨 Messages',    badge: null           }, // 👈 NEW
           ].map(t => (
             <button key={t.id} onClick={() => setMainTab(t.id as typeof mainTab)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
@@ -143,6 +148,7 @@ export default function AdminPage() {
 
         {/* ══ MECHANICS ══ */}
         {mainTab === 'mechanics' && (
+          // ... existing mechanics code (unchanged)
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {([
@@ -272,6 +278,7 @@ export default function AdminPage() {
 
         {/* ══ ADS ══ */}
         {mainTab === 'ads' && (
+          // ... existing ads code (unchanged)
           <div>
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div>
@@ -477,86 +484,143 @@ export default function AdminPage() {
             )}
           </div>
         )}
-      </div>
 
-      {/* Campaign Form Modal */}
-      {showCampaignForm && (
-        <CampaignFormModal
-          advertisers={advertisers}
-          initialData={editCampaign}
-          onClose={() => { setShowCampaignForm(false); setEditCampaign(null) }}
-          onSubmit={async (data) => {
-            setIsSubmittingCampaign(true)
-            try {
-              if (editCampaign) {
-                await updateCampaign(editCampaign.id, data as never)
-              } else {
-                await createCampaign(data as never)
-              }
-              setShowCampaignForm(false)
-              setEditCampaign(null)
-            } finally {
-              setIsSubmittingCampaign(false)
-            }
-          }}
-          isSubmitting={isSubmittingCampaign}
-        />
-      )}
-
-      {/* Advertiser Form Modal */}
-      {showAdvertiserForm && (
-        <AdvertiserFormModal
-          onClose={() => setShowAdvertiserForm(false)}
-          onSubmit={async (data) => {
-            setIsSubmittingAdvertiser(true)
-            try {
-              await createAdvertiser({
-                businessName: data.business_name,
-                contactName:  data.contact_name,
-                email:        data.email,
-                phone:        data.phone,
-                website:      data.website  || undefined,
-                industry:     data.industry || undefined,
-                createdAt:    '',
-                updateAt:     '',
-              })
-              setShowAdvertiserForm(false)
-            } finally {
-              setIsSubmittingAdvertiser(false)
-            }
-          }}
-          isSubmitting={isSubmittingAdvertiser}
-        />
-      )}
-
-      {/* Mechanic confirm modal */}
-      {confirmDialog.open && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-surface-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold mb-2">Confirm action</h3>
-            <p className="text-sm text-gray-400 mb-6">
-              Are you sure you want to <strong className="text-white">{confirmDialog.status}</strong> mechanic{' '}
-              <strong className="text-white">{confirmDialog.name}</strong>? This cannot be undone easily.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button className="btn-outline" onClick={() => setConfirmDialog({ open: false })}>Cancel</button>
+        {/* ══ MESSAGES ══ */}
+        {mainTab === 'messages' && (
+          <div>
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+              <div>
+                <p className="section-title mb-1">Messages</p>
+                <h2 className="text-2xl font-extrabold">Send Notifications</h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  Send in-app notifications to all users, drivers, mechanics, or a specific user.
+                </p>
+              </div>
               <button
-                className="btn-primary bg-red-500 hover:bg-red-600"
-                onClick={async () => {
-                  setConfirmDialog({ open: false })
-                  try {
-                    await updateStatus.mutateAsync({ id: confirmDialog.id!, status: confirmDialog.status! })
-                    toast.success(`Mechanic ${confirmDialog.status}`)
-                  } catch (err: unknown) {
-                    toast.error((err as Error).message ?? 'Failed')
-                  }
-                }}>
-                Confirm {confirmDialog.status}
+                onClick={() => setShowMessageModal(true)}
+                className="btn-primary text-sm py-2.5 px-5">
+                📨 Compose Message
               </button>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  icon:  '🌍',
+                  label: 'Broadcast to All',
+                  desc:  'Send to every registered user on the platform.',
+                  color: 'text-blue-400',
+                },
+                {
+                  icon:  '👥',
+                  label: 'Target by Role',
+                  desc:  'Send only to Drivers or only to Mechanics.',
+                  color: 'text-emerald-400',
+                },
+                {
+                  icon:  '👤',
+                  label: 'Single User',
+                  desc:  'Send a direct message to one specific user by ID.',
+                  color: 'text-brand-500',
+                },
+              ].map(item => (
+                <div
+                  key={item.label}
+                  className="card p-5 cursor-pointer hover:border-brand-500/40 transition-all"
+                  onClick={() => setShowMessageModal(true)}>
+                  <div className="text-3xl mb-3">{item.icon}</div>
+                  <h3 className={`font-bold text-base mb-1 ${item.color}`}>{item.label}</h3>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Campaign Form Modal */}
+        {showCampaignForm && (
+          <CampaignFormModal
+            advertisers={advertisers}
+            initialData={editCampaign}
+            onClose={() => { setShowCampaignForm(false); setEditCampaign(null) }}
+            onSubmit={async (data) => {
+              setIsSubmittingCampaign(true)
+              try {
+                if (editCampaign) {
+                  await updateCampaign(editCampaign.id, data as never)
+                } else {
+                  await createCampaign(data as never)
+                }
+                setShowCampaignForm(false)
+                setEditCampaign(null)
+              } finally {
+                setIsSubmittingCampaign(false)
+              }
+            }}
+            isSubmitting={isSubmittingCampaign}
+          />
+        )}
+
+        {/* Advertiser Form Modal */}
+        {showAdvertiserForm && (
+          <AdvertiserFormModal
+            onClose={() => setShowAdvertiserForm(false)}
+            onSubmit={async (data) => {
+              setIsSubmittingAdvertiser(true)
+              try {
+                await createAdvertiser({
+                  businessName: data.business_name,
+                  contactName:  data.contact_name,
+                  email:        data.email,
+                  phone:        data.phone,
+                  website:      data.website  || undefined,
+                  industry:     data.industry || undefined,
+                  createdAt:    '',
+                  updateAt:     '',
+                })
+                setShowAdvertiserForm(false)
+              } finally {
+                setIsSubmittingAdvertiser(false)
+              }
+            }}
+            isSubmitting={isSubmittingAdvertiser}
+          />
+        )}
+
+        {/* Send Message Modal */}
+        {showMessageModal && (
+          <SendMessageModal onClose={() => setShowMessageModal(false)} />
+        )}
+
+        {/* Mechanic confirm modal */}
+        {confirmDialog.open && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-surface-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl">
+              <h3 className="text-lg font-bold mb-2">Confirm action</h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Are you sure you want to <strong className="text-white">{confirmDialog.status}</strong> mechanic{' '}
+                <strong className="text-white">{confirmDialog.name}</strong>? This cannot be undone easily.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button className="btn-outline" onClick={() => setConfirmDialog({ open: false })}>Cancel</button>
+                <button
+                  className="btn-primary bg-red-500 hover:bg-red-600"
+                  onClick={async () => {
+                    setConfirmDialog({ open: false })
+                    try {
+                      await updateStatus.mutateAsync({ id: confirmDialog.id!, status: confirmDialog.status! })
+                      toast.success(`Mechanic ${confirmDialog.status}`)
+                    } catch (err: unknown) {
+                      toast.error((err as Error).message ?? 'Failed')
+                    }
+                  }}>
+                  Confirm {confirmDialog.status}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   )
 }
