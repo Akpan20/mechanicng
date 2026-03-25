@@ -1,5 +1,5 @@
 export type MechanicType = 'shop' | 'mobile'
-export type MechanicStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
+export type MechanicStatus = 'pending' | 'approved' | 'rejected' | 'suspended' | 'deleted'
 export type PlanId = 'free' | 'standard' | 'pro'
 export type PriceRange = 'low' | 'mid' | 'high'
 export type UserRole = 'user' | 'mechanic' | 'admin'
